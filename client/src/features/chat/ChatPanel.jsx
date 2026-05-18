@@ -1,6 +1,9 @@
-import { MessageSquare, Loader2, ArrowUp, FileVideo } from "lucide-react";
+import { useState } from "react";
+import { MessageSquare, Loader2, ArrowUp, FileVideo, ChevronDown, ChevronRight } from "lucide-react";
 
 export default function ChatPanel({
+  width,
+  isResizing,
   showChatPanel,
   chatMessages,
   chatInput,
@@ -9,8 +12,16 @@ export default function ChatPanel({
   sendChatMessage,
   navigateToCitation,
 }) {
+  const [expandedSources, setExpandedSources] = useState({});
+
+  const toggleSources = (i) =>
+    setExpandedSources((prev) => ({ ...prev, [i]: !prev[i] }));
+
   return (
-    <div className={`chat-panel ${!showChatPanel ? "hidden" : ""}`}>
+    <div
+      className={`chat-panel ${!showChatPanel ? "hidden" : ""}`}
+      style={{ width, transition: isResizing ? "none" : undefined }}
+    >
       <div className="chat-panel-header">
         <h3 style={{ margin: 0, fontSize: "15px", display: "flex", alignItems: "center", gap: "8px" }}>
           <MessageSquare size={16} /> Chat
@@ -39,29 +50,53 @@ export default function ChatPanel({
               {msg.text}
             </div>
             {msg.citations && msg.citations.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", maxWidth: "90%" }}>
-                {msg.citations.map((c, ci) => (
-                  <button
-                    key={ci}
-                    onClick={() => navigateToCitation(c)}
-                    style={{
-                      background: "none",
-                      border: "1px solid var(--card-border)",
-                      borderRadius: "6px",
-                      padding: "3px 8px",
-                      fontSize: "11px",
-                      color: "var(--text-dim)",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                    title={c.text}
-                  >
-                    <FileVideo size={11} />
-                    {c.videoName} [{new Date(c.timestamp * 1000).toISOString().substring(14, 19)}]
-                  </button>
-                ))}
+              <div style={{ maxWidth: "90%" }}>
+                <button
+                  onClick={() => toggleSources(i)}
+                  style={{
+                    background: "none",
+                    border: "1px solid var(--card-border)",
+                    borderRadius: "6px",
+                    padding: "3px 8px",
+                    fontSize: "11px",
+                    color: "var(--text-dim)",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {expandedSources[i] ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+                  {msg.citations.length} source{msg.citations.length !== 1 ? "s" : ""}
+                </button>
+                {expandedSources[i] && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "6px" }}>
+                    {msg.citations.map((c, ci) => (
+                      <button
+                        key={ci}
+                        onClick={() => navigateToCitation(c)}
+                        style={{
+                          background: "none",
+                          border: "1px solid var(--card-border)",
+                          borderRadius: "6px",
+                          padding: "3px 8px",
+                          fontSize: "11px",
+                          color: "var(--text-dim)",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          fontFamily: "inherit",
+                        }}
+                        title={c.text}
+                      >
+                        <FileVideo size={11} />
+                        {c.videoName} [{new Date(c.timestamp * 1000).toISOString().substring(14, 19)}]
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

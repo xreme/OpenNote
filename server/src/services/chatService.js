@@ -6,12 +6,13 @@ const { getVideoStatus } = require("../repositories/videoRepository");
 const { cosineSimilarity } = require("../utils/fileHelpers");
 const { getSettings } = require("./settingsService");
 
-const chat = async (query) => {
+const chat = async (query, collectionId) => {
   const settings = getSettings();
   if (!settings.apiKey) throw Object.assign(new Error("OpenAI API Key is missing"), { status: 400 });
+  if (!collectionId) throw Object.assign(new Error("collectionId is required"), { status: 400 });
 
   const openai = new OpenAI({ apiKey: settings.apiKey });
-  const videoStatus = getVideoStatus();
+  const videoStatus = getVideoStatus(collectionId);
 
   const allChunks = [];
   Object.values(videoStatus.videos).forEach((video) => {
@@ -20,15 +21,17 @@ const chat = async (query) => {
     if (!fs.existsSync(embeddingsPath)) return;
     try {
       const data = JSON.parse(fs.readFileSync(embeddingsPath, "utf8"));
-      data.chunks.forEach((c) => {
-        allChunks.push({ ...c, videoName: video.originalName });
-      });
+      data.chunks.forEach((c) => allChunks.push({ ...c, videoName: video.originalName }));
     } catch (e) {
       console.log(`Failed to load embeddings for ${video.id}: ${e.message}`);
     }
   });
 
-  if (!allChunks.length) throw Object.assign(new Error("No indexed content found. Videos may still be processing or indexing."), { status: 400 });
+  if (!allChunks.length)
+    throw Object.assign(
+      new Error("No indexed content found. Videos may still be processing or indexing."),
+      { status: 400 },
+    );
 
   const queryEmbedResp = await openai.embeddings.create({
     model: "text-embedding-3-small",
@@ -54,7 +57,8 @@ const chat = async (query) => {
     messages: [
       {
         role: "system",
-        content: "You are a helpful assistant that answers questions based on video transcript excerpts. Answer concisely and accurately based only on the provided context.",
+        content:
+          "You are a helpful assistant that answers questions based on video transcript excerpts. Answer concisely and accurately based only on the provided context.",
       },
       { role: "user", content: `Context:\n${context}\n\nQuestion: ${query}` },
     ],

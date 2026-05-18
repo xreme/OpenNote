@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: true,
     proxy: {
       '/videos': 'http://localhost:5001',
       '/upload': 'http://localhost:5001',
@@ -14,6 +15,7 @@ export default defineConfig({
       '/open-folder': 'http://localhost:5001',
       '/processed': 'http://localhost:5001',
       '/chat': 'http://localhost:5001',
+      '/collections': 'http://localhost:5001',
     },
   },
 })

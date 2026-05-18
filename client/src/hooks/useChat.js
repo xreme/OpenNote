@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { sendChatQuery } from "../services/chatService";
 
-export default function useChat({ setViewMode, setSelectedId, seekTo }) {
+export default function useChat({ setViewMode, setSelectedId, seekTo, collectionId }) {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -14,7 +14,7 @@ export default function useChat({ setViewMode, setSelectedId, seekTo }) {
     setChatMessages((prev) => [...prev, { role: "user", text: query }]);
     setChatLoading(true);
     try {
-      const resp = await sendChatQuery(query);
+      const resp = await sendChatQuery(query, collectionId);
       setChatMessages((prev) => [
         ...prev,
         {

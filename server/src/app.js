@@ -3,18 +3,20 @@ const fileUpload = require("express-fileupload");
 const cors = require("cors");
 const fs = require("fs");
 
-const { PROCESSED_DIR, CLIENT_DIST, UPLOADS_DIR, NOTES_DIR } = require("./config");
+const { PROCESSED_DIR, CLIENT_DIST, UPLOADS_DIR, NOTES_DIR, COLLECTIONS_DIR } = require("./config");
 const videoRoutes = require("./routes/videoRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const notesRoutes = require("./routes/notesRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const systemRoutes = require("./routes/systemRoutes");
+const collectionsRoutes = require("./routes/collectionsRoutes");
 
 // Ensure directories exist
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 if (!fs.existsSync(PROCESSED_DIR)) fs.mkdirSync(PROCESSED_DIR, { recursive: true });
 if (!fs.existsSync(NOTES_DIR)) fs.mkdirSync(NOTES_DIR, { recursive: true });
+if (!fs.existsSync(COLLECTIONS_DIR)) fs.mkdirSync(COLLECTIONS_DIR, { recursive: true });
 
 const app = express();
 
@@ -44,6 +46,7 @@ app.use("/upload", uploadRoutes);
 app.use("/notes", notesRoutes);
 app.use("/settings", settingsRoutes);
 app.use("/chat", chatRoutes);
+app.use("/collections", collectionsRoutes);
 app.use("/", systemRoutes);
 
 // Catch-all route to serve index.html for SPA

@@ -1,16 +1,19 @@
 const app = require("./app");
-const { PORT, DB_FILE, PROCESSED_DIR } = require("./config");
+const { PORT, PROCESSED_DIR } = require("./config");
 const fs = require("fs");
 const path = require("path");
-const { getVideoStatus, loadDB, saveToDB } = require("./repositories/videoRepository");
+const {
+  loadAllCollections,
+  getAllVideosAcrossCollections,
+  saveCollection,
+  findVideoById,
+} = require("./repositories/videoRepository");
 const { processVideo, indexVideo } = require("./services/videoService");
 
-// Load database and resume tasks
-loadDB();
+loadAllCollections();
 
-const videoStatus = getVideoStatus();
-Object.keys(videoStatus.videos).forEach((id) => {
-  const video = videoStatus.videos[id];
+const allVideos = getAllVideosAcrossCollections();
+Object.entries(allVideos).forEach(([id, video]) => {
   if (
     video.status === "compressing" ||
     video.status === "transcribing" ||
@@ -26,8 +29,13 @@ Object.keys(videoStatus.videos).forEach((id) => {
         video.txtPath,
       );
     } else {
-      video.status = "error";
-      video.error = "Interrupted by restart and input missing";
+      const found = findVideoById(id);
+      if (found) {
+        const { video: v, collectionId } = found;
+        v.status = "error";
+        v.error = "Interrupted by restart and input missing";
+        saveCollection(collectionId);
+      }
     }
   } else if (video.status === "completed" && video.folderPath) {
     const embeddingsPath = path.join(video.folderPath, "embeddings.json");
@@ -37,8 +45,7 @@ Object.keys(videoStatus.videos).forEach((id) => {
     }
   }
 });
-saveToDB();
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

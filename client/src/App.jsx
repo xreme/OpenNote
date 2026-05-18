@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 
-import { API_BASE } from "./constants/api";
+import { downloadNoteUrl } from "./services/notesService";
 
 import useVideos from "./hooks/useVideos";
 import useNotes from "./hooks/useNotes";
@@ -10,6 +10,9 @@ import useVideoPlayer from "./hooks/useVideoPlayer";
 import useChat from "./hooks/useChat";
 import useSearch from "./hooks/useSearch";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
+import useCollections from "./hooks/useCollections";
+import useResizable from "./hooks/useResizable";
+import ResizeHandle from "./features/shared/ResizeHandle";
 
 import { Sidebar } from "./features/sidebar";
 import { ChatPanel } from "./features/chat";
@@ -20,6 +23,7 @@ import {
   GlobalSearchModal,
   GenerateModal,
   ExportModal,
+  AddContentModal,
 } from "./features/modals";
 
 function App() {
@@ -34,6 +38,11 @@ function App() {
 
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [notesSidebarVisible, setNotesSidebarVisible] = useState(true);
+
+  const { width: sidebarWidth, isResizing: sidebarResizing, onMouseDown: onSidebarMouseDown } =
+    useResizable({ key: "sidebar", defaultWidth: 320, minWidth: 200, maxWidth: 480 });
+  const { width: chatWidth, isResizing: chatResizing, onMouseDown: onChatMouseDown } =
+    useResizable({ key: "chat", defaultWidth: 360, minWidth: 240, maxWidth: 520 });
   const [viewMode, setViewMode] = useState("videos");
   const [search, setSearch] = useState("");
   const [transcriptExpanded, setTranscriptExpanded] = useState(false);
@@ -41,6 +50,16 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const {
+    collections,
+    activeCollectionId,
+    setActiveCollection,
+    createCollection,
+    renameCollection,
+    deleteCollection,
+  } = useCollections();
 
   const {
     videos,
@@ -48,11 +67,12 @@ function App() {
     setSelectedId,
     uploading,
     handleUpload,
+    handleUrlUpload,
     deleteVideo,
     moveVideo,
     saveRename,
     openFolder,
-  } = useVideos();
+  } = useVideos(activeCollectionId);
 
   const {
     notes,
@@ -63,7 +83,7 @@ function App() {
     generateNotes,
     renameNote,
     deleteNote,
-  } = useNotes();
+  } = useNotes(activeCollectionId);
 
   const { settings, setSettings, encoderPresets, saveSettings } = useSettings();
 
@@ -78,7 +98,7 @@ function App() {
     setShowChatPanel,
     sendChatMessage,
     navigateToCitation,
-  } = useChat({ setViewMode, setSelectedId, seekTo });
+  } = useChat({ setViewMode, setSelectedId, seekTo, collectionId: activeCollectionId });
 
   const {
     showSearch,
@@ -128,7 +148,7 @@ function App() {
   const downloadNote = () => {
     if (!selectedNote) return;
     const link = document.createElement("a");
-    link.href = `${API_BASE}/notes/${encodeURIComponent(selectedNote.filename)}/download`;
+    link.href = downloadNoteUrl(selectedNote.filename, activeCollectionId);
     link.download = selectedNote.filename;
     link.target = "_blank";
     document.body.appendChild(link);
@@ -146,6 +166,14 @@ function App() {
           content: data.content,
           createdAt: new Date().toISOString(),
         });
+      },
+    });
+  };
+
+  const handleGenerateSummary = (videoId, onContent) => {
+    generateNotes([videoId], {
+      onSuccess: (data) => {
+        if (onContent) onContent(data.content);
       },
     });
   };
@@ -168,6 +196,8 @@ function App() {
   return (
     <div className="app-container">
       <Sidebar
+        width={sidebarVisible ? sidebarWidth : 0}
+        isResizing={sidebarResizing}
         videos={videos}
         filteredVideos={filteredVideos}
         uploading={uploading}
@@ -191,17 +221,12 @@ function App() {
         setShowExportModal={setShowExportModal}
         setShowSearch={setShowSearch}
         setShowSettings={setShowSettings}
+        setShowAddModal={setShowAddModal}
+        collections={collections}
+        activeCollectionId={activeCollectionId}
+        onSwitchCollection={setActiveCollection}
       />
-
-      <ChatPanel
-        showChatPanel={showChatPanel}
-        chatMessages={chatMessages}
-        chatInput={chatInput}
-        setChatInput={setChatInput}
-        chatLoading={chatLoading}
-        sendChatMessage={sendChatMessage}
-        navigateToCitation={navigateToCitation}
-      />
+      {sidebarVisible && <ResizeHandle onMouseDown={onSidebarMouseDown} active={sidebarResizing} />}
 
       <div className="main-content">
         {viewMode === "videos" ? (
@@ -221,6 +246,9 @@ function App() {
                 seekTo={seekTo}
                 syncTranscriptToVideo={syncTranscriptToVideo}
                 onExportTxt={downloadTxtLabel}
+                notes={notes}
+                generating={generating}
+                onGenerateSummary={handleGenerateSummary}
               />
             ) : (
               <EmptyVideoState
@@ -245,6 +273,19 @@ function App() {
         )}
       </div>
 
+      {showChatPanel && <ResizeHandle onMouseDown={onChatMouseDown} direction={-1} active={chatResizing} />}
+      <ChatPanel
+        width={showChatPanel ? chatWidth : 0}
+        isResizing={chatResizing}
+        showChatPanel={showChatPanel}
+        chatMessages={chatMessages}
+        chatInput={chatInput}
+        setChatInput={setChatInput}
+        chatLoading={chatLoading}
+        sendChatMessage={sendChatMessage}
+        navigateToCitation={navigateToCitation}
+      />
+
       <SettingsModal
         show={showSettings}
         onClose={() => setShowSettings(false)}
@@ -254,6 +295,12 @@ function App() {
         onSave={handleSaveSettings}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
+        collections={collections}
+        activeCollectionId={activeCollectionId}
+        onSwitchCollection={setActiveCollection}
+        onCreateCollection={createCollection}
+        onRenameCollection={renameCollection}
+        onDeleteCollection={deleteCollection}
       />
 
       <GlobalSearchModal
@@ -277,6 +324,14 @@ function App() {
         show={showExportModal}
         onClose={() => setShowExportModal(false)}
         videos={videos}
+      />
+
+      <AddContentModal
+        show={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onUpload={handleUpload}
+        onUrlUpload={handleUrlUpload}
+        collectionId={activeCollectionId}
       />
     </div>
   );

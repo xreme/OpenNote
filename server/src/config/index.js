@@ -8,7 +8,7 @@ const PORT = 5001;
 
 const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 const PROCESSED_DIR = path.join(DATA_DIR, "processed");
-const DB_FILE = path.join(SERVER_DIR, "db.json");
+const COLLECTIONS_DIR = path.join(SERVER_DIR, "collections");
 const SETTINGS_FILE = path.join(SERVER_DIR, "settings.json");
 const NOTES_DIR = path.join(DATA_DIR, "notes");
 const CLIENT_DIST = path.join(PROJECT_DIR, "client", "dist");
@@ -37,7 +37,7 @@ module.exports = {
   PORT,
   UPLOADS_DIR,
   PROCESSED_DIR,
-  DB_FILE,
+  COLLECTIONS_DIR,
   SETTINGS_FILE,
   NOTES_DIR,
   CLIENT_DIST,

@@ -11,10 +11,13 @@ import {
   FileText,
   Sparkles,
   MessageSquare,
+  ChevronDown,
 } from "lucide-react";
 import VideoItem from "./VideoItem";
 
 export default function Sidebar({
+  width,
+  isResizing,
   videos,
   filteredVideos,
   uploading,
@@ -38,9 +41,16 @@ export default function Sidebar({
   setShowExportModal,
   setShowSearch,
   setShowSettings,
+  setShowAddModal,
+  collections,
+  activeCollectionId,
+  onSwitchCollection,
 }) {
   return (
-    <div className={`sidebar ${!sidebarVisible ? "hidden" : ""}`}>
+    <div
+      className={`sidebar ${!sidebarVisible ? "hidden" : ""}`}
+      style={{ width, transition: isResizing ? "none" : undefined }}
+    >
       <div className="sidebar-header">
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <button
@@ -52,17 +62,13 @@ export default function Sidebar({
           </button>
           <h1 className="logo">OpenNote</h1>
         </div>
-        <label className="upload-btn-round">
+        <button
+          className="upload-btn-round"
+          onClick={() => setShowAddModal(true)}
+          title="Add Content"
+        >
           <Plus size={20} />
-          <input
-            type="file"
-            multiple
-            className="hidden"
-            style={{ display: "none" }}
-            onChange={handleUpload}
-            accept="video/*"
-          />
-        </label>
+        </button>
       </div>
 
       <div className="search-container">
@@ -188,23 +194,42 @@ export default function Sidebar({
           padding: "16px",
           borderTop: "1px solid var(--card-border)",
           display: "flex",
+          flexDirection: "column",
           gap: "8px",
         }}
       >
-        <button
-          onClick={() => setShowSearch(true)}
-          className="settings-btn"
-          style={{ justifyContent: "center", flex: 1 }}
-        >
-          <Search size={16} /> Search
-        </button>
-        <button
-          onClick={() => setShowSettings(true)}
-          className="settings-btn"
-          style={{ width: "auto", padding: "8px" }}
-        >
-          <Settings size={16} />
-        </button>
+        {collections && collections.length > 0 && (
+          <div className="collection-switcher">
+            <select
+              className="collection-select"
+              value={activeCollectionId || ""}
+              onChange={(e) => onSwitchCollection(e.target.value)}
+            >
+              {collections.map((col) => (
+                <option key={col.id} value={col.id}>
+                  {col.title}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="collection-select-icon" />
+          </div>
+        )}
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            onClick={() => setShowSearch(true)}
+            className="settings-btn"
+            style={{ justifyContent: "center", flex: 1 }}
+          >
+            <Search size={16} /> Search
+          </button>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="settings-btn"
+            style={{ width: "auto", padding: "8px" }}
+          >
+            <Settings size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );

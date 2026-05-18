@@ -1,23 +1,30 @@
-const { getVideoStatus, saveToDB } = require("../repositories/videoRepository");
+const {
+  getVideoStatus,
+  saveCollection,
+  findVideoById,
+} = require("../repositories/videoRepository");
 const { getCleanName } = require("../utils/fileHelpers");
 const { PROCESSED_DIR } = require("../config");
 const path = require("path");
 const fs = require("fs");
 
 const listVideos = (req, res) => {
-  const videoStatus = getVideoStatus();
-  const orderedVideos = videoStatus.order
-    .map((id) => videoStatus.videos[id])
-    .filter(Boolean);
+  const { collection } = req.query;
+  if (!collection) return res.status(400).json({ error: "collection query param is required" });
+
+  const videoStatus = getVideoStatus(collection);
+  const orderedVideos = videoStatus.order.map((id) => videoStatus.videos[id]).filter(Boolean);
   res.json(orderedVideos);
 };
 
 const reorderVideos = (req, res) => {
-  const { order } = req.body;
-  const videoStatus = getVideoStatus();
+  const { order, collectionId } = req.body;
+  if (!collectionId) return res.status(400).json({ error: "collectionId is required" });
+
+  const videoStatus = getVideoStatus(collectionId);
   if (Array.isArray(order)) {
     videoStatus.order = order;
-    saveToDB();
+    saveCollection(collectionId);
     res.json({ success: true });
   } else {
     res.status(400).send("Invalid order format");
@@ -27,66 +34,67 @@ const reorderVideos = (req, res) => {
 const renameVideo = (req, res) => {
   const { id } = req.params;
   const { originalName } = req.body;
-  const videoStatus = getVideoStatus();
-  const video = videoStatus.videos[id];
 
-  if (video) {
-    const oldCleanName = getCleanName(video.originalName);
-    const newCleanName = getCleanName(originalName);
-    const oldFolderName = `${id}-${oldCleanName}`;
-    const newFolderName = `${id}-${newCleanName}`;
+  const found = findVideoById(id);
+  if (!found) return res.status(404).send("Video not found");
 
-    if (oldCleanName !== newCleanName) {
-      const oldFolderPath = path.join(PROCESSED_DIR, oldFolderName);
-      const newFolderPath = path.join(PROCESSED_DIR, newFolderName);
+  const { video, collectionId } = found;
+  const videoStatus = getVideoStatus(collectionId);
 
-      if (fs.existsSync(oldFolderPath)) {
-        const files = [
-          { old: `${id}-${oldCleanName}.mp4`, new: `${id}-${newCleanName}.mp4` },
-          { old: `${id}-${oldCleanName}.json`, new: `${id}-${newCleanName}.json` },
-          { old: `${id}-${oldCleanName}.txt`, new: `${id}-${newCleanName}.txt` },
-        ];
+  const oldCleanName = getCleanName(video.originalName);
+  const newCleanName = getCleanName(originalName);
+  const oldFolderName = `${id}-${oldCleanName}`;
+  const newFolderName = `${id}-${newCleanName}`;
 
-        files.forEach((f) => {
-          const oldFilePath = path.join(oldFolderPath, f.old);
-          if (fs.existsSync(oldFilePath)) {
-            const newFilePath = path.join(oldFolderPath, f.new);
-            fs.renameSync(oldFilePath, newFilePath);
-          }
-        });
+  if (oldCleanName !== newCleanName) {
+    const oldFolderPath = path.join(PROCESSED_DIR, oldFolderName);
+    const newFolderPath = path.join(PROCESSED_DIR, newFolderName);
 
-        fs.renameSync(oldFolderPath, newFolderPath);
+    if (fs.existsSync(oldFolderPath)) {
+      const files = [
+        { old: `${id}-${oldCleanName}.mp4`, new: `${id}-${newCleanName}.mp4` },
+        { old: `${id}-${oldCleanName}.json`, new: `${id}-${newCleanName}.json` },
+        { old: `${id}-${oldCleanName}.txt`, new: `${id}-${newCleanName}.txt` },
+      ];
 
-        video.folderPath = newFolderPath;
-        video.outputPath = `/processed/${newFolderName}/${id}-${newCleanName}.mp4`;
-        video.transcriptPath = path.join(newFolderPath, `${id}-${newCleanName}.json`);
-        video.txtPath = path.join(newFolderPath, `${id}-${newCleanName}.txt`);
-      }
+      files.forEach((f) => {
+        const oldFilePath = path.join(oldFolderPath, f.old);
+        if (fs.existsSync(oldFilePath)) {
+          fs.renameSync(oldFilePath, path.join(oldFolderPath, f.new));
+        }
+      });
+
+      fs.renameSync(oldFolderPath, newFolderPath);
+
+      video.folderPath = newFolderPath;
+      video.outputPath = `/processed/${newFolderName}/${id}-${newCleanName}.mp4`;
+      video.transcriptPath = path.join(newFolderPath, `${id}-${newCleanName}.json`);
+      video.txtPath = path.join(newFolderPath, `${id}-${newCleanName}.txt`);
     }
-
-    video.originalName = originalName;
-    saveToDB();
-    res.json(video);
-  } else {
-    res.status(404).send("Video not found");
   }
+
+  video.originalName = originalName;
+  saveCollection(collectionId);
+  res.json(videoStatus.videos[id]);
 };
 
 const deleteVideo = (req, res) => {
   const { id } = req.params;
-  const videoStatus = getVideoStatus();
-  const video = videoStatus.videos[id];
-  if (video) {
-    if (fs.existsSync(video.folderPath)) {
-      fs.rmSync(video.folderPath, { recursive: true, force: true });
-    }
-    delete videoStatus.videos[id];
-    videoStatus.order = videoStatus.order.filter((vId) => vId !== id);
-    saveToDB();
-    res.json({ success: true });
-  } else {
-    res.status(404).send("Video not found");
+
+  const found = findVideoById(id);
+  if (!found) return res.status(404).send("Video not found");
+
+  const { video, collectionId } = found;
+  const videoStatus = getVideoStatus(collectionId);
+
+  if (fs.existsSync(video.folderPath)) {
+    fs.rmSync(video.folderPath, { recursive: true, force: true });
   }
+
+  delete videoStatus.videos[id];
+  videoStatus.order = videoStatus.order.filter((vId) => vId !== id);
+  saveCollection(collectionId);
+  res.json({ success: true });
 };
 
 module.exports = { listVideos, reorderVideos, renameVideo, deleteVideo };

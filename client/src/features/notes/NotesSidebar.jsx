@@ -3,6 +3,8 @@ import { PanelLeftClose, PanelLeftOpen, FileText } from "lucide-react";
 import NoteItem from "./NoteItem";
 
 export default function NotesSidebar({
+  width,
+  isResizing,
   notes,
   selectedNote,
   notesSidebarVisible,
@@ -14,7 +16,10 @@ export default function NotesSidebar({
   onDeleteNote,
 }) {
   return (
-    <div className={`notes-sidebar ${!notesSidebarVisible ? "hidden" : ""}`}>
+    <div
+      className={`notes-sidebar ${!notesSidebarVisible ? "hidden" : ""}`}
+      style={{ width, transition: isResizing ? "none" : undefined }}
+    >
       <div
         style={{
           padding: "24px 16px 16px",

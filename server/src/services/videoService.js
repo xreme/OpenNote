@@ -5,14 +5,15 @@ const { exec } = require("child_process");
 const OpenAI = require("openai");
 
 const { SETTINGS_FILE, ENCODER_PRESETS, TRANSCRIBE_SCRIPT } = require("../config");
-const { getVideoStatus, updateStatus } = require("../repositories/videoRepository");
+const { findVideoById, updateStatus } = require("../repositories/videoRepository");
 const { getSettings } = require("./settingsService");
 
 const indexVideo = async (id) => {
   try {
-    const videoStatus = getVideoStatus();
-    const video = videoStatus.videos[id];
-    if (!video || !video.transcriptPath || !fs.existsSync(video.transcriptPath)) return;
+    const found = findVideoById(id);
+    if (!found) return;
+    const { video } = found;
+    if (!video.transcriptPath || !fs.existsSync(video.transcriptPath)) return;
     if (!fs.existsSync(SETTINGS_FILE)) return;
     const settings = getSettings();
     if (!settings.apiKey) return;
@@ -65,7 +66,7 @@ const processVideo = async (id, inputPath, outputPath, transcriptPath, txtPath) 
 
     await new Promise((resolve, reject) => {
       ffmpeg(inputPath)
-        .outputOptions([...encoderOpts, "-acodec aac", "-b:a 128k"])
+        .outputOptions([...encoderOpts, "-acodec aac", "-b:a 128k", "-movflags +faststart"])
         .on("progress", (p) => {
           const percent = p.percent ? Math.round(p.percent) : 0;
           updateStatus(id, "compressing", { progress: percent });
@@ -87,17 +88,14 @@ const processVideo = async (id, inputPath, outputPath, transcriptPath, txtPath) 
       exec(
         `python3 "${TRANSCRIBE_SCRIPT}" "${outputPath}" base`,
         (error, stdout, stderr) => {
-          if (error && error.code !== 0) {
-            console.error(`[${id}] Python Error:`, stderr);
-            return reject(new Error(stderr || "Transcription failed"));
-          }
           try {
             const result = JSON.parse(stdout);
             if (result.error) return reject(new Error(result.error));
             resolve(result);
           } catch (e) {
-            console.error(`[${id}] Parse Error. Stdout:`, stdout);
-            reject(new Error("Failed to parse transcription output"));
+            const msg = stderr?.trim() || error?.message || "Transcription failed";
+            console.error(`[${id}] Python Error:`, msg);
+            reject(new Error(msg));
           }
         },
       );

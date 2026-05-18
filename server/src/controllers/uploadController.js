@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 
 const { UPLOADS_DIR, PROCESSED_DIR } = require("../config");
-const { getVideoStatus, saveToDB } = require("../repositories/videoRepository");
+const { addVideoToCollection, getUniqueVideoName } = require("../repositories/videoRepository");
 const { getCleanName } = require("../utils/fileHelpers");
 const { processVideo } = require("../services/videoService");
 
@@ -11,21 +11,20 @@ const uploadVideos = async (req, res) => {
     return res.status(400).send("No files were uploaded.");
   }
 
-  const files = Array.isArray(req.files.videos)
-    ? req.files.videos
-    : [req.files.videos];
+  const collectionId = req.body.collectionId;
+  if (!collectionId) return res.status(400).json({ error: "collectionId is required" });
+
+  const files = Array.isArray(req.files.videos) ? req.files.videos : [req.files.videos];
   const uploadedVideos = [];
-  const videoStatus = getVideoStatus();
 
   for (const file of files) {
     const id = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const fileName = file.name;
+    const fileName = getUniqueVideoName(collectionId, file.name);
     const cleanName = getCleanName(fileName);
     const folderName = `${id}-${cleanName}`;
     const videoFolder = path.join(PROCESSED_DIR, folderName);
 
-    if (!fs.existsSync(videoFolder))
-      fs.mkdirSync(videoFolder, { recursive: true });
+    if (!fs.existsSync(videoFolder)) fs.mkdirSync(videoFolder, { recursive: true });
 
     const inputPath = path.join(UPLOADS_DIR, `${id}-${fileName}`);
     const outputPathFull = path.join(videoFolder, `${id}-${cleanName}.mp4`);
@@ -40,16 +39,14 @@ const uploadVideos = async (req, res) => {
       status: "uploading",
       progress: 0,
       outputPath: `/processed/${folderName}/${id}-${cleanName}.mp4`,
-      txtPath: txtPath,
-      transcriptPath: transcriptPath,
-      inputPath: inputPath,
+      txtPath,
+      transcriptPath,
+      inputPath,
       folderPath: videoFolder,
     };
 
-    videoStatus.videos[id] = videoInfo;
-    videoStatus.order.unshift(id);
+    addVideoToCollection(collectionId, videoInfo);
     uploadedVideos.push(videoInfo);
-    saveToDB();
 
     processVideo(id, inputPath, outputPathFull, transcriptPath, txtPath);
   }

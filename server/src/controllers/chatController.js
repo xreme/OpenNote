@@ -4,13 +4,14 @@ const { chat } = require("../services/chatService");
 
 const chatHandler = async (req, res) => {
   try {
-    const { query } = req.body;
+    const { query, collectionId } = req.body;
     if (!query) return res.status(400).json({ error: "Query is required" });
+    if (!collectionId) return res.status(400).json({ error: "collectionId is required" });
 
     if (!fs.existsSync(SETTINGS_FILE))
       return res.status(400).json({ error: "Settings not configured" });
 
-    const result = await chat(query);
+    const result = await chat(query, collectionId);
     res.json(result);
   } catch (error) {
     console.error("Chat Error:", error);
