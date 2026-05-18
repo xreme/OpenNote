@@ -52,19 +52,55 @@ const uploadFromUrl = async (req, res) => {
       addVideoToCollection(collectionId, videoInfo);
       res.json(videoInfo);
 
-      // Download in background — cap at 1080p H.264 so the source mp4 is universally openable
-      exec(
-        `"${YTDLP_BIN}" --no-playlist -f "bestvideo[height<=1080][ext=mp4][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best" --merge-output-format mp4 -o "${inputPath}" "${url}"`,
-        (dlErr, _stdout, dlStderr) => {
-          if (dlErr) {
-            console.error(`[${id}] yt-dlp failed:`, dlStderr);
-            const { updateStatus } = require("../repositories/videoRepository");
-            updateStatus(id, "error", { error: "Download failed: " + dlStderr });
-            return;
-          }
-          processVideo(id, inputPath, outputPathFull, transcriptPath, txtPath);
-        }
-      );
+      // TikTok's HEVC 1080p streams lack audio despite metadata claiming otherwise.
+      // H.264 muxed formats (reported as "h264" on TikTok, "avc1" on YouTube) reliably
+      // include audio. Prefer those, then fall back to separate streams, then best muxed.
+      const fmt = [
+        "bestvideo[height<=1080][ext=mp4][vcodec^=avc]+bestaudio[ext=m4a]",
+        "bestvideo[height<=1080][ext=mp4]+bestaudio",
+        "best[vcodec^=h264][ext=mp4]",
+        "best[vcodec^=avc][ext=mp4]",
+        "best[ext=mp4]",
+        "best",
+      ].join("/");
+
+      const h264OnlyFmt = "best[vcodec^=h264][ext=mp4]/best[vcodec^=avc][ext=mp4]/best";
+
+      const downloadAndVerify = (formatStr, attempt) => {
+        exec(
+          `"${YTDLP_BIN}" --no-playlist -f "${formatStr}" --merge-output-format mp4 -o "${inputPath}" "${url}"`,
+          (dlErr, _stdout, dlStderr) => {
+            if (dlErr) {
+              console.error(`[${id}] yt-dlp failed:`, dlStderr);
+              const { updateStatus } = require("../repositories/videoRepository");
+              updateStatus(id, "error", { error: "Download failed: " + dlStderr });
+              return;
+            }
+
+            exec(
+              `ffprobe -v error -select_streams a -show_entries stream=codec_type -of csv=p=0 "${inputPath}"`,
+              (probeErr, probeOut) => {
+                if (!probeErr && probeOut.trim()) {
+                  processVideo(id, inputPath, outputPathFull, transcriptPath, txtPath);
+                  return;
+                }
+
+                if (attempt < 1) {
+                  console.warn(`[${id}] Downloaded file has no audio, retrying with H.264-only`);
+                  if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+                  downloadAndVerify(h264OnlyFmt, attempt + 1);
+                  return;
+                }
+
+                console.warn(`[${id}] No audio after retry, processing anyway`);
+                processVideo(id, inputPath, outputPathFull, transcriptPath, txtPath);
+              },
+            );
+          },
+        );
+      };
+
+      downloadAndVerify(fmt, 0);
     }
   );
 };
