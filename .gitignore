@@ -53,3 +53,5 @@ __pycache__/
 *.sln
 *.sw?
 
+# server stuff
+collections/
