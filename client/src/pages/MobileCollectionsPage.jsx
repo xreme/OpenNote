@@ -68,6 +68,12 @@ function Highlight({ text, query }) {
   );
 }
 
+function formatTimestamp(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 function DetailView({ item, collectionId, onBack, onRefresh }) {
   const isNote = item._type === 'note';
   const title = isNote
@@ -78,8 +84,10 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [activeTab, setActiveTab] = useState('summary');
 
   const canGenerate = !isNote && item.status === 'completed' && !content;
+  const transcript = !isNote ? (item.transcript ?? []) : [];
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -146,46 +154,111 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
 
       {showInfo && <SourceInfoSheet video={item} onClose={() => setShowInfo(false)} />}
 
+      {/* Tab bar — only for video items */}
+      {!isNote && (
+        <div style={{
+          flexShrink: 0,
+          display: 'flex',
+          borderBottom: '2px solid var(--card-border)',
+          background: 'var(--sidebar-bg)',
+        }}>
+          {['summary', 'transcript'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: 1, padding: '10px',
+                background: 'none', border: 'none',
+                borderBottom: activeTab === tab ? '2px solid var(--primary)' : '2px solid transparent',
+                marginBottom: '-2px',
+                color: activeTab === tab ? 'var(--primary)' : 'var(--text-dim)',
+                fontSize: '12px', fontWeight: 700, fontFamily: 'inherit',
+                letterSpacing: '0.05em', textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
+
       <main style={{
         flex: 1, overflowY: 'auto',
         WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain',
         padding: '20px 16px',
         paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
       }}>
-        {generating ? (
-          <div style={{ textAlign: 'center', color: 'var(--text-dim)', marginTop: '80px', fontSize: '13px', lineHeight: '1.7' }}>
-            <Loader2 size={32} className="spin" style={{ color: 'var(--primary)', display: 'block', margin: '0 auto 14px' }} />
-            Generating summary…
-          </div>
-        ) : content ? (
-          <div className="markdown-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', color: 'var(--text-dim)', marginTop: '80px', fontSize: '13px', lineHeight: '1.7', padding: '0 24px' }}>
-            <Sparkles size={32} style={{ opacity: 0.2, display: 'block', margin: '0 auto 14px' }} />
-            {!isNote && item.status !== 'completed'
-              ? 'Summary will be available after this source finishes processing.'
-              : 'No summary yet.'}
-            {canGenerate && (
-              <button onClick={handleGenerate} style={{
-                marginTop: '20px',
-                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                padding: '12px 24px',
-                background: 'var(--primary)', color: 'var(--bg-color)',
-                border: '2px solid var(--card-border)', borderRadius: '8px',
-                fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
-                cursor: 'pointer', letterSpacing: '0.03em',
-              }}>
-                <Sparkles size={14} /> Generate Summary
-              </button>
-            )}
-            {genError && (
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#d94f4f', fontSize: '12px' }}>
-                <AlertCircle size={13} /> {genError}
-              </div>
-            )}
-          </div>
+        {/* Summary tab (or note content) */}
+        {(isNote || activeTab === 'summary') && (
+          generating ? (
+            <div style={{ textAlign: 'center', color: 'var(--text-dim)', marginTop: '80px', fontSize: '13px', lineHeight: '1.7' }}>
+              <Loader2 size={32} className="spin" style={{ color: 'var(--primary)', display: 'block', margin: '0 auto 14px' }} />
+              Generating summary…
+            </div>
+          ) : content ? (
+            <div className="markdown-content">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', color: 'var(--text-dim)', marginTop: '80px', fontSize: '13px', lineHeight: '1.7', padding: '0 24px' }}>
+              <Sparkles size={32} style={{ opacity: 0.2, display: 'block', margin: '0 auto 14px' }} />
+              {!isNote && item.status !== 'completed'
+                ? 'Summary will be available after this source finishes processing.'
+                : 'No summary yet.'}
+              {canGenerate && (
+                <button onClick={handleGenerate} style={{
+                  marginTop: '20px',
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '12px 24px',
+                  background: 'var(--primary)', color: 'var(--bg-color)',
+                  border: '2px solid var(--card-border)', borderRadius: '8px',
+                  fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
+                  cursor: 'pointer', letterSpacing: '0.03em',
+                }}>
+                  <Sparkles size={14} /> Generate Summary
+                </button>
+              )}
+              {genError && (
+                <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#d94f4f', fontSize: '12px' }}>
+                  <AlertCircle size={13} /> {genError}
+                </div>
+              )}
+            </div>
+          )
+        )}
+
+        {/* Transcript tab */}
+        {!isNote && activeTab === 'transcript' && (
+          transcript.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+              {transcript.map((seg, i) => (
+                <div key={i} style={{
+                  display: 'flex', gap: '12px', alignItems: 'flex-start',
+                  padding: '10px 0',
+                  borderBottom: '1px solid var(--card-border)',
+                }}>
+                  <span style={{
+                    flexShrink: 0, fontSize: '11px', fontWeight: 700,
+                    color: 'var(--text-dim)', letterSpacing: '0.03em',
+                    paddingTop: '2px', minWidth: '36px',
+                  }}>
+                    {formatTimestamp(seg.start)}
+                  </span>
+                  <span style={{ fontSize: '13px', lineHeight: '1.6', color: 'var(--text-main)' }}>
+                    {seg.speech}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', color: 'var(--text-dim)', marginTop: '80px', fontSize: '13px', lineHeight: '1.7', padding: '0 24px' }}>
+              <FileText size={32} style={{ opacity: 0.2, display: 'block', margin: '0 auto 14px' }} />
+              {item.status !== 'completed'
+                ? 'Transcript will be available after this source finishes processing.'
+                : 'No transcript available for this source.'}
+            </div>
+          )
         )}
       </main>
     </div>
@@ -206,6 +279,8 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
   const [libSelected, setLibSelected] = useState(null);
   const [libInfoVideo, setLibInfoVideo] = useState(null);
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(true);
+  const [sourcesExpanded, setSourcesExpanded] = useState(true);
 
   // Chat tab state
   const [chatMessages, setChatMessages] = useState([]);
@@ -429,12 +504,63 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
             </div>
           ) : (
             <>
+              {standaloneNotes.length > 0 && (
+                <section>
+                  <button
+                    onClick={() => setNotesExpanded(v => !v)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      width: '100%', padding: '16px 16px 8px',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontFamily: 'inherit', textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-dim)', flex: 1 }}>
+                      Notes — {standaloneNotes.length}
+                    </span>
+                    <ChevronDown size={14} style={{ color: 'var(--text-dim)', flexShrink: 0, transform: notesExpanded ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }} />
+                  </button>
+                  {notesExpanded && standaloneNotes.map(note => (
+                    <button
+                      key={note.filename}
+                      onClick={() => setLibSelected(note)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        width: '100%', padding: '14px 16px',
+                        background: 'none', border: 'none',
+                        borderBottom: '1px solid var(--card-border)',
+                        cursor: 'pointer', textAlign: 'left',
+                        color: 'var(--text-main)', fontFamily: 'inherit',
+                      }}
+                    >
+                      <FileText size={18} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {note.filename.replace(/_/g, ' ').replace(/\.[^.]+$/, '')}
+                        </div>
+                      </div>
+                      <ChevronRight size={16} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+                    </button>
+                  ))}
+                </section>
+              )}
               {videosWithSummary.length > 0 && (
                 <section>
-                  <div style={{ padding: '16px 16px 8px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-dim)' }}>
-                    Sources — {videosWithSummary.length}
-                  </div>
-                  {videosWithSummary.map(video => (
+                  <button
+                    onClick={() => setSourcesExpanded(v => !v)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      width: '100%', padding: '16px 16px 8px',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontFamily: 'inherit', textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-dim)', flex: 1 }}>
+                      Sources — {videosWithSummary.length}
+                    </span>
+                    <ChevronDown size={14} style={{ color: 'var(--text-dim)', flexShrink: 0, transform: sourcesExpanded ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }} />
+                  </button>
+                  {sourcesExpanded && videosWithSummary.map(video => (
                     <div key={video.id} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--card-border)' }}>
                       <div
                         onClick={() => setLibSelected(video)}
@@ -463,35 +589,6 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
                         <Eye size={16} />
                       </button>
                     </div>
-                  ))}
-                </section>
-              )}
-              {standaloneNotes.length > 0 && (
-                <section>
-                  <div style={{ padding: '16px 16px 8px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-dim)' }}>
-                    Notes — {standaloneNotes.length}
-                  </div>
-                  {standaloneNotes.map(note => (
-                    <button
-                      key={note.filename}
-                      onClick={() => setLibSelected(note)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        width: '100%', padding: '14px 16px',
-                        background: 'none', border: 'none',
-                        borderBottom: '1px solid var(--card-border)',
-                        cursor: 'pointer', textAlign: 'left',
-                        color: 'var(--text-main)', fontFamily: 'inherit',
-                      }}
-                    >
-                      <FileText size={18} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {note.filename.replace(/_/g, ' ').replace(/\.[^.]+$/, '')}
-                        </div>
-                      </div>
-                      <ChevronRight size={16} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
-                    </button>
                   ))}
                 </section>
               )}
