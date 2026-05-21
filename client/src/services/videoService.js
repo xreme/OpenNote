@@ -21,3 +21,6 @@ export const openFolderPath = (folderPath) =>
 
 export const uploadVideoFromUrl = (url, collectionId) =>
   axios.post(`${API_BASE}/upload/url`, { url, collectionId });
+
+export const retryVideo = (id) =>
+  axios.post(`${API_BASE}/videos/${id}/retry`);

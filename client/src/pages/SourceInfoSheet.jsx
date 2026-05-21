@@ -1,4 +1,5 @@
-import { X, Link2, Upload } from 'lucide-react';
+import { useState } from 'react';
+import { X, Link2, Upload, RotateCcw, Trash2, Loader2 } from 'lucide-react';
 
 function InfoRow({ label, children }) {
   return (
@@ -14,14 +15,44 @@ function InfoRow({ label, children }) {
   );
 }
 
-export default function SourceInfoSheet({ video, onClose }) {
+export default function SourceInfoSheet({ video, onClose, onRetry, onDelete }) {
+  const [retrying, setRetrying] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [actionError, setActionError] = useState(null);
+
   const timestamp = parseInt(video.id, 10);
   const addedDate = isNaN(timestamp)
     ? '—'
     : new Date(timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 
   const isLink = !!video.sourceUrl;
+  const isFailed = video.status === 'error';
   const displayName = video.originalName.replace(/\.[^.]+$/, '');
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    setActionError(null);
+    try {
+      await onRetry(video.id);
+      onClose();
+    } catch (err) {
+      setActionError(err.response?.data?.error || 'Retry failed. Please try again.');
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setActionError(null);
+    try {
+      await onDelete(video.id);
+      onClose();
+    } catch (err) {
+      setActionError(err.response?.data?.error || 'Delete failed. Please try again.');
+      setDeleting(false);
+    }
+  };
 
   return (
     <div
@@ -104,6 +135,53 @@ export default function SourceInfoSheet({ video, onClose }) {
             </InfoRow>
           )}
         </div>
+
+        {/* Action buttons */}
+        {(onRetry || onDelete) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '24px' }}>
+            {actionError && (
+              <div style={{ fontSize: '12px', color: '#d94f4f', textAlign: 'center' }}>
+                {actionError}
+              </div>
+            )}
+            {isFailed && isLink && onRetry && (
+              <button
+                onClick={handleRetry}
+                disabled={retrying || deleting}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  width: '100%', padding: '12px',
+                  background: 'var(--primary)', color: 'var(--bg-color)',
+                  border: '2px solid var(--card-border)', borderRadius: '10px',
+                  fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
+                  letterSpacing: '0.03em', cursor: retrying || deleting ? 'not-allowed' : 'pointer',
+                  opacity: retrying || deleting ? 0.6 : 1,
+                }}
+              >
+                {retrying ? <Loader2 size={14} className="spin" /> : <RotateCcw size={14} />}
+                {retrying ? 'Retrying…' : 'Retry Processing'}
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={handleDelete}
+                disabled={retrying || deleting}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  width: '100%', padding: '12px',
+                  background: 'transparent', color: '#d94f4f',
+                  border: '2px solid rgba(217,79,79,0.35)', borderRadius: '10px',
+                  fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
+                  letterSpacing: '0.03em', cursor: retrying || deleting ? 'not-allowed' : 'pointer',
+                  opacity: retrying || deleting ? 0.6 : 1,
+                }}
+              >
+                {deleting ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
+                {deleting ? 'Deleting…' : 'Delete Source'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

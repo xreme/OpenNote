@@ -5,6 +5,7 @@ const {
 } = require("../repositories/videoRepository");
 const { getCleanName } = require("../utils/fileHelpers");
 const { PROCESSED_DIR } = require("../config");
+const { processUrlVideo } = require("../services/videoService");
 const path = require("path");
 const fs = require("fs");
 
@@ -97,4 +98,21 @@ const deleteVideo = (req, res) => {
   res.json({ success: true });
 };
 
-module.exports = { listVideos, reorderVideos, renameVideo, deleteVideo };
+const retryVideo = (req, res) => {
+  const { id } = req.params;
+
+  const found = findVideoById(id);
+  if (!found) return res.status(404).send("Video not found");
+
+  const { video } = found;
+  if (!video.sourceUrl) return res.status(400).json({ error: "Only URL-sourced videos can be retried" });
+  if (!["error"].includes(video.status)) return res.status(400).json({ error: "Video is not in a failed state" });
+
+  const outputPathFull = path.join(video.folderPath, path.basename(video.transcriptPath).replace(/\.json$/, ".mp4"));
+  const relativeOutputPath = video.outputPath || `/processed/${path.relative(PROCESSED_DIR, outputPathFull)}`;
+
+  res.json({ success: true });
+  processUrlVideo(id, video.sourceUrl, video.transcriptPath, video.txtPath, outputPathFull, relativeOutputPath);
+};
+
+module.exports = { listVideos, reorderVideos, renameVideo, deleteVideo, retryVideo };

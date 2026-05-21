@@ -9,7 +9,7 @@ const { SETTINGS_FILE, ENCODER_PRESETS, TRANSCRIBE_SCRIPT, YTDLP_BIN, UPLOADS_DI
 const { findVideoById, updateStatus } = require("../repositories/videoRepository");
 const { getSettings } = require("./settingsService");
 
-const execWithRetry = (command, { retries = 3, delayMs = 2000 } = {}) =>
+const execWithRetry = (command, { retries = 3, delayMs = 5000 } = {}) =>
   new Promise((resolve, reject) => {
     const attempt = (remaining) => {
       exec(command, (err, stdout, stderr) => {
@@ -189,7 +189,7 @@ const processUrlVideo = async (id, url, transcriptPath, txtPath, outputPathFull,
     updateStatus(id, "downloading");
     try {
       await execWithRetry(
-        `"${YTDLP_BIN}" -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4 --no-playlist -o "${rawVideoPath}" "${url}"`,
+        `"${YTDLP_BIN}" -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[vcodec^=h264][ext=mp4]/best[vcodec^=avc][ext=mp4]/best[ext=mp4]/best" --merge-output-format mp4 --no-playlist -o "${rawVideoPath}" "${url}"`,
       );
 
       if (!segments) {
@@ -249,7 +249,7 @@ const processUrlVideo = async (id, url, transcriptPath, txtPath, outputPathFull,
     updateStatus(id, "transcribing");
     try {
       await execWithRetry(
-        `"${YTDLP_BIN}" -f "bestaudio/best" --extract-audio --audio-format mp3 --no-playlist -o "${audioPath}" "${url}"`,
+        `"${YTDLP_BIN}" -f "bestaudio/best[vcodec^=h264]/best[vcodec^=avc]/best" --extract-audio --audio-format mp3 --no-playlist -o "${audioPath}" "${url}"`,
       );
 
       segments = await new Promise((resolve, reject) => {

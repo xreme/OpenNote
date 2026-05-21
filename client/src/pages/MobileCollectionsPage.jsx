@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getCollections } from '../services/collectionsService';
-import { getVideos } from '../services/videoService';
+import { getVideos, deleteVideoById, retryVideo } from '../services/videoService';
 import { getNotes, generateNotesForVideos } from '../services/notesService';
 import { sendChatQuery } from '../services/chatService';
 import ReactMarkdown from 'react-markdown';
@@ -153,7 +153,14 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
         )}
       </header>
 
-      {showInfo && <SourceInfoSheet video={item} onClose={() => setShowInfo(false)} />}
+      {showInfo && (
+        <SourceInfoSheet
+          video={item}
+          onClose={() => setShowInfo(false)}
+          onRetry={async (id) => { await retryVideo(id); if (onRefresh) onRefresh(); setShowInfo(false); }}
+          onDelete={async (id) => { await deleteVideoById(id); if (onRefresh) onRefresh(); onBack(); }}
+        />
+      )}
 
       {/* Tab bar — only for video items */}
       {!isNote && (
@@ -866,8 +873,22 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
       )}
 
       {/* Sheets / overlays */}
-      {libInfoVideo && <SourceInfoSheet video={libInfoVideo} onClose={() => setLibInfoVideo(null)} />}
-      {searchInfoVideo && <SourceInfoSheet video={searchInfoVideo} onClose={() => setSearchInfoVideo(null)} />}
+      {libInfoVideo && (
+        <SourceInfoSheet
+          video={libInfoVideo}
+          onClose={() => setLibInfoVideo(null)}
+          onRetry={async (id) => { await retryVideo(id); fetchData(); }}
+          onDelete={async (id) => { await deleteVideoById(id); setLibInfoVideo(null); fetchData(); }}
+        />
+      )}
+      {searchInfoVideo && (
+        <SourceInfoSheet
+          video={searchInfoVideo}
+          onClose={() => setSearchInfoVideo(null)}
+          onRetry={async (id) => { await retryVideo(id); fetchData(); }}
+          onDelete={async (id) => { await deleteVideoById(id); setSearchInfoVideo(null); fetchData(); }}
+        />
+      )}
       {showAddSheet && (
         <AddSourceSheet
           collectionId={collectionId}
