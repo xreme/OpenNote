@@ -229,7 +229,36 @@ export default function SettingsModal({
               />
             </div>
             <div style={{ borderTop: "1px solid var(--card-border)", marginTop: "8px", paddingTop: "16px" }}>
-              <h4 style={{ margin: "0 0 12px", fontSize: "14px" }}>Hardware Acceleration</h4>
+              <h4 style={{ margin: "0 0 12px", fontSize: "14px" }}>Desktop</h4>
+              <div className="form-group">
+                <label>Download &amp; Compress Online Videos</label>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <button
+                    onClick={() => setSettings({ ...settings, downloadVideo: !settings.downloadVideo })}
+                    style={{
+                      padding: "6px 14px",
+                      background: settings.downloadVideo ? "var(--accent)" : "var(--card-bg)",
+                      border: "var(--border-width) solid var(--border-color)",
+                      boxShadow: "var(--shadow-sm)",
+                      borderRadius: "var(--radius-sm)",
+                      color: settings.downloadVideo ? "#fff" : "var(--text-main)",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      fontSize: "13px",
+                    }}
+                  >
+                    {settings.downloadVideo ? "Enabled" : "Disabled"}
+                  </button>
+                  <span style={{ fontSize: "12px", color: "var(--text-dim)" }}>
+                    {settings.downloadVideo
+                      ? "Full video will be downloaded and compressed for local playback"
+                      : "Only the transcript is saved — no video file stored"}
+                  </span>
+                </div>
+                <p style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "6px" }}>
+                  When enabled, URL-imported videos are fully downloaded and compressed using the encoder below. Requires more disk space and time.
+                </p>
+              </div>
               <div className="form-group">
                 <label>Video Encoder</label>
                 <select

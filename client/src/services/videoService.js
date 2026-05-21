@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "./axiosInstance";
 import { API_BASE } from "../constants/api";
 
 export const getVideos = (collectionId) =>

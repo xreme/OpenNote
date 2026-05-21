@@ -108,10 +108,11 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
+      height: '100dvh',
       background: 'var(--bg-color)', color: 'var(--text-main)',
       fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+      overflow: 'hidden',
     }}>
       <header style={{
         flexShrink: 0,
@@ -299,6 +300,8 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
   useEffect(() => {
     const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.body.classList.toggle('dark', dark);
+    document.querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', dark ? '#242424' : '#f0efe9');
   }, []);
 
   useEffect(() => {
@@ -425,10 +428,11 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
+      height: '100dvh',
       background: 'var(--bg-color)', color: 'var(--text-main)',
       fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+      overflow: 'hidden',
     }}>
 
       {/* Header */}

@@ -13,6 +13,7 @@ const SETTINGS_FILE = path.join(SERVER_DIR, "settings.json");
 const NOTES_DIR = path.join(DATA_DIR, "notes");
 const CLIENT_DIST = path.join(PROJECT_DIR, "client", "dist");
 const TRANSCRIBE_SCRIPT = path.join(SERVER_DIR, "transcribe.py");
+const YTDLP_BIN = process.env.YTDLP_BIN || "yt-dlp";
 
 const ENCODER_PRESETS = {
   videotoolbox: {
@@ -42,5 +43,6 @@ module.exports = {
   NOTES_DIR,
   CLIENT_DIST,
   TRANSCRIBE_SCRIPT,
+  YTDLP_BIN,
   ENCODER_PRESETS,
 };

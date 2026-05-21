@@ -27,13 +27,19 @@ import {
 } from "./features/modals";
 
 function App() {
-  const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem("darkMode") === "true"
-  );
+  const osQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const [darkMode, setDarkMode] = useState(() => osQuery.matches);
+
+  useEffect(() => {
+    const onChange = (e) => setDarkMode(e.matches);
+    osQuery.addEventListener("change", onChange);
+    return () => osQuery.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     document.body.classList.toggle("dark", darkMode);
-    localStorage.setItem("darkMode", darkMode);
+    document.querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", darkMode ? "#242424" : "#f0efe9");
   }, [darkMode]);
 
   const [sidebarVisible, setSidebarVisible] = useState(true);

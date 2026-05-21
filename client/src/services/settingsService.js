@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "./axiosInstance";
 import { API_BASE } from "../constants/api";
 
 export const getSettings = () => axios.get(`${API_BASE}/settings`);

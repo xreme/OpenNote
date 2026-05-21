@@ -1,12 +1,26 @@
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const ffmpeg = require("fluent-ffmpeg");
 const { exec } = require("child_process");
 const OpenAI = require("openai");
 
-const { SETTINGS_FILE, ENCODER_PRESETS, TRANSCRIBE_SCRIPT } = require("../config");
+const { SETTINGS_FILE, ENCODER_PRESETS, TRANSCRIBE_SCRIPT, YTDLP_BIN, UPLOADS_DIR } = require("../config");
 const { findVideoById, updateStatus } = require("../repositories/videoRepository");
 const { getSettings } = require("./settingsService");
+
+const execWithRetry = (command, { retries = 3, delayMs = 2000 } = {}) =>
+  new Promise((resolve, reject) => {
+    const attempt = (remaining) => {
+      exec(command, (err, stdout, stderr) => {
+        if (!err) return resolve({ stdout, stderr });
+        if (remaining <= 1) return reject(new Error(stderr?.trim() || err.message));
+        console.warn(`Download failed, retrying (${remaining - 1} left)...`);
+        setTimeout(() => attempt(remaining - 1), delayMs);
+      });
+    };
+    attempt(retries);
+  });
 
 const indexVideo = async (id) => {
   try {
@@ -114,4 +128,165 @@ const processVideo = async (id, inputPath, outputPath, transcriptPath, txtPath) 
   }
 };
 
-module.exports = { processVideo, indexVideo };
+const parseSRTTimestamp = (ts) => {
+  const [time, ms = "0"] = ts.trim().split(/[,.]/);
+  const [hh, mm, ss] = time.split(":").map(Number);
+  return hh * 3600 + mm * 60 + ss + Number(ms) / 1000;
+};
+
+const parseSRT = (content) => {
+  const segments = [];
+  const timePattern = /(\d{2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[,.]\d{3})/;
+  const blocks = content.split(/\n\s*\n/);
+  for (const block of blocks) {
+    const lines = block.trim().split("\n");
+    const timeLine = lines.find((l) => timePattern.test(l));
+    if (!timeLine) continue;
+    const m = timeLine.match(timePattern);
+    const start = parseSRTTimestamp(m[1]);
+    const end = parseSRTTimestamp(m[2]);
+    const textStart = lines.indexOf(timeLine) + 1;
+    const speech = lines.slice(textStart).join(" ").replace(/<[^>]+>/g, "").trim();
+    if (!speech) continue;
+    segments.push({ start, end, speech });
+  }
+  return segments;
+};
+
+const processUrlVideo = async (id, url, transcriptPath, txtPath, outputPathFull, relativeOutputPath) => {
+  updateStatus(id, "processing");
+
+  const settings = fs.existsSync(SETTINGS_FILE) ? getSettings() : {};
+  const shouldDownloadVideo = settings.downloadVideo === true;
+
+  let segments = null;
+
+  // Try platform captions first (fast, no audio download needed)
+  const subDir = path.join(os.tmpdir(), `opennote-subs-${id}`);
+  fs.mkdirSync(subDir, { recursive: true });
+  try {
+    await new Promise((resolve) => {
+      exec(
+        `"${YTDLP_BIN}" --write-sub --write-auto-sub --sub-lang "en,en-US,en-GB" --skip-download --convert-subs srt -o "${path.join(subDir, "sub")}" --no-playlist "${url}"`,
+        (err) => resolve(err),
+      );
+    });
+    const srtFiles = fs.readdirSync(subDir).filter((f) => f.endsWith(".srt"));
+    if (srtFiles.length > 0) {
+      const srtContent = fs.readFileSync(path.join(subDir, srtFiles[0]), "utf8");
+      const parsed = parseSRT(srtContent);
+      if (parsed.length > 0) segments = parsed;
+    }
+  } catch (e) {
+    console.error(`[${id}] Subtitle fetch error:`, e.message);
+  } finally {
+    try { fs.rmSync(subDir, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  if (shouldDownloadVideo && outputPathFull && relativeOutputPath) {
+    // Download full video, compress it, and use it for transcription if subtitles weren't available
+    const rawVideoPath = path.join(UPLOADS_DIR, `${id}-raw.mp4`);
+    updateStatus(id, "downloading");
+    try {
+      await execWithRetry(
+        `"${YTDLP_BIN}" -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4 --no-playlist -o "${rawVideoPath}" "${url}"`,
+      );
+
+      if (!segments) {
+        updateStatus(id, "transcribing");
+        segments = await new Promise((resolve, reject) => {
+          exec(
+            `python3 "${TRANSCRIBE_SCRIPT}" "${rawVideoPath}" base`,
+            (error, stdout, stderr) => {
+              try {
+                const result = JSON.parse(stdout);
+                if (result.error) return reject(new Error(result.error));
+                resolve(result);
+              } catch (e) {
+                const msg = stderr?.trim() || error?.message || "Transcription failed";
+                console.error(`[${id}] Python Error:`, msg);
+                reject(new Error(msg));
+              }
+            },
+          );
+        });
+      }
+
+      updateStatus(id, "compressing", { progress: 0 });
+      let encoderKey = "videotoolbox";
+      try {
+        const s = getSettings();
+        if (s.encoder && ENCODER_PRESETS[s.encoder]) encoderKey = s.encoder;
+      } catch (_) {}
+      const encoderOpts = ENCODER_PRESETS[encoderKey].options;
+
+      await new Promise((resolve, reject) => {
+        ffmpeg(rawVideoPath)
+          .outputOptions([...encoderOpts, "-acodec aac", "-b:a 128k", "-movflags +faststart"])
+          .on("progress", (p) => {
+            const percent = p.percent ? Math.round(p.percent) : 0;
+            updateStatus(id, "compressing", { progress: percent });
+          })
+          .on("end", resolve)
+          .on("error", (err) => {
+            console.error(`[${id}] FFmpeg Error:`, err);
+            reject(err);
+          })
+          .save(outputPathFull);
+      });
+    } catch (e) {
+      console.error(`[${id}] Video download/compress failed:`, e.message);
+      if (!segments) {
+        updateStatus(id, "error", { error: e.message });
+        return;
+      }
+    } finally {
+      try { if (fs.existsSync(rawVideoPath)) fs.unlinkSync(rawVideoPath); } catch (_) {}
+    }
+  } else if (!segments) {
+    // Fall back to audio-only download + Whisper
+    const audioPath = path.join(UPLOADS_DIR, `${id}-audio.mp3`);
+    updateStatus(id, "transcribing");
+    try {
+      await execWithRetry(
+        `"${YTDLP_BIN}" -f "bestaudio/best" --extract-audio --audio-format mp3 --no-playlist -o "${audioPath}" "${url}"`,
+      );
+
+      segments = await new Promise((resolve, reject) => {
+        exec(
+          `python3 "${TRANSCRIBE_SCRIPT}" "${audioPath}" base`,
+          (error, stdout, stderr) => {
+            try {
+              const result = JSON.parse(stdout);
+              if (result.error) return reject(new Error(result.error));
+              resolve(result);
+            } catch (e) {
+              const msg = stderr?.trim() || error?.message || "Transcription failed";
+              console.error(`[${id}] Python Error:`, msg);
+              reject(new Error(msg));
+            }
+          },
+        );
+      });
+    } catch (e) {
+      console.error(`[${id}] Audio transcription failed:`, e.message);
+      updateStatus(id, "error", { error: e.message });
+      return;
+    } finally {
+      try { if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath); } catch (_) {}
+    }
+  }
+
+  fs.writeFileSync(transcriptPath, JSON.stringify(segments, null, 2));
+  fs.writeFileSync(txtPath, segments.map((s) => s.speech).join(" "));
+
+  const completionDetails = { transcript: segments, progress: 100 };
+  if (shouldDownloadVideo && relativeOutputPath && fs.existsSync(outputPathFull)) {
+    completionDetails.outputPath = relativeOutputPath;
+  }
+
+  updateStatus(id, "completed", completionDetails);
+  indexVideo(id);
+};
+
+module.exports = { processVideo, processUrlVideo, indexVideo };

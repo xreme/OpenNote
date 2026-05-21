@@ -20,6 +20,7 @@
 }
 
 body.dark {
+  background-color: #242424;
   --bg-color: #212121;
   --sidebar-bg: #242424;
   --card-bg: #1b1b1b;
@@ -45,7 +46,7 @@ body {
   font-family: 'IBM Plex Mono', 'Courier New', monospace;
   background-color: var(--bg-color);
   color: var(--text-main);
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -56,7 +57,7 @@ body {
 /* Layout */
 .app-container {
   display: flex;
-  height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-color);
   color: var(--text-main);
   overflow: hidden;
@@ -423,7 +424,7 @@ video {
 }
 
 .transcript-scrollbox.expanded {
-  max-height: 100vh;
+  max-height: 100dvh;
 }
 
 .transcript-scrollbox::-webkit-scrollbar {

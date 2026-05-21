@@ -8,6 +8,12 @@ import {
   Locate,
 } from "lucide-react";
 
+const getYouTubeTimestampUrl = (sourceUrl, startSeconds) => {
+  const m = sourceUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+  if (!m) return null;
+  return `https://www.youtube.com/watch?v=${m[1]}&t=${Math.floor(startSeconds)}s`;
+};
+
 export default function TranscriptSection({
   selectedVideo,
   transcriptExpanded,
@@ -19,6 +25,8 @@ export default function TranscriptSection({
   seekTo,
   syncTranscriptToVideo,
 }) {
+  const isExternal = selectedVideo.sourceUrl && !selectedVideo.outputPath;
+
   return (
     <div className="transcript-section">
       <div className="transcript-header">
@@ -30,13 +38,15 @@ export default function TranscriptSection({
           }}
         >
           <h3 style={{ margin: 0, fontSize: "20px" }}>Transcription</h3>
-          <button
-            onClick={() => syncTranscriptToVideo(selectedVideo.transcript)}
-            className="icon-btn-toggle"
-            title="Sync to Video Time"
-          >
-            <Locate size={18} />
-          </button>
+          {!isExternal && (
+            <button
+              onClick={() => syncTranscriptToVideo(selectedVideo.transcript)}
+              className="icon-btn-toggle"
+              title="Sync to Video Time"
+            >
+              <Locate size={18} />
+            </button>
+          )}
           <button
             onClick={() => {
               setShowLocalSearch(!showLocalSearch);
@@ -101,16 +111,30 @@ export default function TranscriptSection({
                 id={`transcript-row-${idx}`}
                 className="transcript-row"
               >
-                <button
-                  onClick={() => seekTo(segment.start)}
-                  className="timestamp"
-                >
-                  [
-                  {new Date(segment.start * 1000)
-                    .toISOString()
-                    .substring(14, 19)}
-                  ]
-                </button>
+                {isExternal ? (() => {
+                  const ytUrl = getYouTubeTimestampUrl(selectedVideo.sourceUrl, segment.start);
+                  return ytUrl ? (
+                    <a
+                      href={ytUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="timestamp"
+                    >
+                      [{new Date(segment.start * 1000).toISOString().substring(14, 19)}]
+                    </a>
+                  ) : (
+                    <span className="timestamp">
+                      [{new Date(segment.start * 1000).toISOString().substring(14, 19)}]
+                    </span>
+                  );
+                })() : (
+                  <button
+                    onClick={() => seekTo(segment.start)}
+                    className="timestamp"
+                  >
+                    [{new Date(segment.start * 1000).toISOString().substring(14, 19)}]
+                  </button>
+                )}
                 <p className="transcript-text">{segment.speech}</p>
               </div>
             );
