@@ -1,0 +1,11 @@
+services:
+  opennote:
+    build: .
+    container_name: opennote
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./data:/app/data
+      - ./server/collections:/app/server/collections
+      - ./server/settings.json:/app/server/settings.json
