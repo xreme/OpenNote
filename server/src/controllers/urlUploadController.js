@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const { exec } = require("child_process");
 
-const { YTDLP_BIN, PROCESSED_DIR } = require("../config");
+const { YTDLP_BIN, YTDLP_OPTS, PROCESSED_DIR } = require("../config");
 const { addVideoToCollection, getUniqueVideoName } = require("../repositories/videoRepository");
 const { getCleanName } = require("../utils/fileHelpers");
 const { processUrlVideo } = require("../services/videoService");
@@ -15,7 +15,7 @@ const uploadFromUrl = async (req, res) => {
   const id = Date.now() + "-" + Math.round(Math.random() * 1e9);
 
   exec(
-    `"${YTDLP_BIN}" --print "%(title)s" --no-playlist "${url}"`,
+    `"${YTDLP_BIN}" ${YTDLP_OPTS} --print "%(title)s" --no-playlist "${url}"`,
     async (err, titleStdout) => {
       const rawTitle = (titleStdout || "").trim() || "video";
       const safeTitle = rawTitle.replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_") || "video";

@@ -14,6 +14,7 @@ const NOTES_DIR = path.join(DATA_DIR, "notes");
 const CLIENT_DIST = path.join(PROJECT_DIR, "client", "dist");
 const TRANSCRIBE_SCRIPT = path.join(SERVER_DIR, "transcribe.py");
 const YTDLP_BIN = process.env.YTDLP_BIN || "yt-dlp";
+const YTDLP_OPTS = "--js-runtimes node";
 
 const ENCODER_PRESETS = {
   videotoolbox: {
@@ -44,5 +45,6 @@ module.exports = {
   CLIENT_DIST,
   TRANSCRIBE_SCRIPT,
   YTDLP_BIN,
+  YTDLP_OPTS,
   ENCODER_PRESETS,
 };
