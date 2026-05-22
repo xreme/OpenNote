@@ -8,6 +8,11 @@ import SummaryPanel from "./SummaryPanel";
 const toCleanName = (originalName) =>
   originalName.replace(/\.[^.]+$/, "").replace(/[^a-z0-9.]/gi, "_");
 
+const isPortraitSource = (video) => {
+  if (!video.sourceUrl || video.outputPath) return false;
+  return /tiktok\.com|instagram\.com/i.test(video.sourceUrl);
+};
+
 export default function VideoView({
   selectedVideo,
   videoRef,
@@ -96,7 +101,7 @@ export default function VideoView({
             transition: "max-height 0.3s ease, margin-bottom 0.3s ease",
           }}
         >
-          <div className="video-player-wrapper">
+          <div className={`video-player-wrapper ${isPortraitSource(selectedVideo) ? "portrait" : ""}`}>
             <VideoPlayer selectedVideo={selectedVideo} videoRef={videoRef} />
           </div>
         </div>

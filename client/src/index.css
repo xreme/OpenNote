@@ -362,6 +362,13 @@ body {
   position: relative;
 }
 
+.video-player-wrapper.portrait {
+  aspect-ratio: 9/16;
+  max-width: 400px;
+  max-height: 580px;
+  margin: 0 auto;
+}
+
 video {
   width: 100%;
   height: 100%;
