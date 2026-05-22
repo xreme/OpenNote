@@ -88,41 +88,43 @@ export default function NoteItem({ note, selected, onSelect, onRename, onDelete,
           </>
         )}
       </div>
-      {!previewMode && !isEditing && (
+      {!isEditing && (
         <button
           className="rename-btn"
           onClick={(e) => {
             e.stopPropagation();
-            startEditing();
+            if (!previewMode) startEditing();
           }}
-          title="Rename"
+          disabled={previewMode}
+          title={previewMode ? "Not available in preview mode" : "Rename"}
+          style={previewMode ? { opacity: 0.35, cursor: "not-allowed" } : undefined}
         >
           <Edit2 size={14} />
         </button>
       )}
-      {!previewMode && (
-        <button
-          className="delete-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(note.filename);
-          }}
-          title="Delete"
-          style={{
-            backgroundColor: "#ef4444",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            padding: "4px 8px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-        >
-          <Trash2 size={14} /> Delete
-        </button>
-      )}
+      <button
+        className="delete-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!previewMode) onDelete(note.filename);
+        }}
+        disabled={previewMode}
+        title={previewMode ? "Not available in preview mode" : "Delete"}
+        style={{
+          backgroundColor: previewMode ? "#ef4444" : "#ef4444",
+          color: "white",
+          border: "none",
+          borderRadius: "4px",
+          padding: "4px 8px",
+          cursor: previewMode ? "not-allowed" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          opacity: previewMode ? 0.35 : 1,
+        }}
+      >
+        <Trash2 size={14} /> Delete
+      </button>
     </div>
   );
 }

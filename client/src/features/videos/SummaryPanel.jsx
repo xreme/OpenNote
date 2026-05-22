@@ -22,30 +22,32 @@ export default function SummaryPanel({ video, summaryContent, generating, onGene
               <Sparkles size={24} />
             </div>
             <p style={{ fontSize: "13px", fontWeight: 700, marginBottom: "6px" }}>No summary yet</p>
-            {previewMode ? (
-              <p style={{ fontSize: "12px", color: "var(--text-dim)", textAlign: "center", lineHeight: 1.6 }}>
-                Summary generation is not available in preview mode.
+            <>
+              <p style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "24px", textAlign: "center", lineHeight: 1.6 }}>
+                {previewMode
+                  ? "Summary generation is not available in preview mode."
+                  : "Generate an AI summary of this video's transcript."}
               </p>
-            ) : (
-              <>
-                <p style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "24px", textAlign: "center", lineHeight: 1.6 }}>
-                  Generate an AI summary of this video's transcript.
+              <button
+                className="save-btn"
+                onClick={() => !previewMode && onGenerate()}
+                disabled={previewMode || video.status !== "completed"}
+                style={{
+                  width: "100%",
+                  maxWidth: "280px",
+                  opacity: previewMode ? 0.4 : 1,
+                  cursor: previewMode ? "not-allowed" : undefined,
+                }}
+                title={previewMode ? "Not available in preview mode" : undefined}
+              >
+                <Sparkles size={15} /> Generate Summary
+              </button>
+              {!previewMode && video.status !== "completed" && (
+                <p style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "10px", textAlign: "center" }}>
+                  Video must finish processing first.
                 </p>
-                <button
-                  className="save-btn"
-                  onClick={onGenerate}
-                  disabled={video.status !== "completed"}
-                  style={{ width: "100%", maxWidth: "280px" }}
-                >
-                  <Sparkles size={15} /> Generate Summary
-                </button>
-                {video.status !== "completed" && (
-                  <p style={{ fontSize: "11px", color: "var(--text-dim)", marginTop: "10px", textAlign: "center" }}>
-                    Video must finish processing first.
-                  </p>
-                )}
-              </>
-            )}
+              )}
+            </>
           </div>
         )}
       </div>

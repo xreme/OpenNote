@@ -83,15 +83,15 @@ export default function Sidebar({
             </span>
           )}
         </div>
-        {!previewMode && (
-          <button
-            className="upload-btn-round"
-            onClick={() => setShowAddModal(true)}
-            title="Add Content"
-          >
-            <Plus size={20} />
-          </button>
-        )}
+        <button
+          className="upload-btn-round"
+          onClick={() => !previewMode && setShowAddModal(true)}
+          title={previewMode ? "Not available in preview mode" : "Add Content"}
+          disabled={previewMode}
+          style={previewMode ? { opacity: 0.4, cursor: "not-allowed", pointerEvents: "auto" } : undefined}
+        >
+          <Plus size={20} />
+        </button>
       </div>
 
       <div className="search-container">
@@ -169,15 +169,15 @@ export default function Sidebar({
           gap: "8px",
         }}
       >
-        {!previewMode && (
-          <button
-            className="action-btn-primary"
-            onClick={() => setShowGenerateModal(true)}
-            title="Generate AI Notes"
-          >
-            <Sparkles size={16} /> Generate Notes
-          </button>
-        )}
+        <button
+          className="action-btn-primary"
+          onClick={() => !previewMode && setShowGenerateModal(true)}
+          title={previewMode ? "Not available in preview mode" : "Generate AI Notes"}
+          disabled={previewMode}
+          style={previewMode ? { opacity: 0.4, cursor: "not-allowed", pointerEvents: "auto" } : undefined}
+        >
+          <Sparkles size={16} /> Generate Notes
+        </button>
         <button
           className="action-btn-secondary"
           onClick={() => setShowExportModal(true)}

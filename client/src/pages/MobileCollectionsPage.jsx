@@ -93,7 +93,7 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
   const hasPreview = !isNote && item.status === 'completed' && (item.outputPath || item.sourceUrl);
   const isPortrait = !!(item.sourceUrl && !item.outputPath && /tiktok\.com|instagram\.com/i.test(item.sourceUrl));
 
-  const canGenerate = !previewMode && !isNote && item.status === 'completed' && !content;
+  const canGenerate = !isNote && item.status === 'completed' && !content;
   const transcript = !isNote ? (item.transcript ?? []) : [];
 
   const handleGenerate = async () => {
@@ -164,8 +164,9 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
         <SourceInfoSheet
           video={item}
           onClose={() => setShowInfo(false)}
-          onRetry={previewMode ? null : async (id) => { await retryVideo(id); if (onRefresh) onRefresh(); setShowInfo(false); }}
-          onDelete={previewMode ? null : async (id) => { await deleteVideoById(id); if (onRefresh) onRefresh(); onBack(); }}
+          onRetry={async (id) => { await retryVideo(id); if (onRefresh) onRefresh(); setShowInfo(false); }}
+          onDelete={async (id) => { await deleteVideoById(id); if (onRefresh) onRefresh(); onBack(); }}
+          previewMode={previewMode}
         />
       )}
 
@@ -257,15 +258,22 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
                 ? 'Summary will be available after this source finishes processing.'
                 : 'No summary yet.'}
               {canGenerate && (
-                <button onClick={handleGenerate} style={{
-                  marginTop: '20px',
-                  display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  padding: '12px 24px',
-                  background: 'var(--primary)', color: 'var(--bg-color)',
-                  border: '2px solid var(--card-border)', borderRadius: '8px',
-                  fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
-                  cursor: 'pointer', letterSpacing: '0.03em',
-                }}>
+                <button
+                  onClick={() => !previewMode && handleGenerate()}
+                  disabled={previewMode}
+                  title={previewMode ? "Not available in preview mode" : undefined}
+                  style={{
+                    marginTop: '20px',
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    padding: '12px 24px',
+                    background: 'var(--primary)', color: 'var(--bg-color)',
+                    border: '2px solid var(--card-border)', borderRadius: '8px',
+                    fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
+                    cursor: previewMode ? 'not-allowed' : 'pointer',
+                    letterSpacing: '0.03em',
+                    opacity: previewMode ? 0.4 : 1,
+                  }}
+                >
                   <Sparkles size={14} /> Generate Summary
                 </button>
               )}
@@ -543,24 +551,26 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
           WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain',
           paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
         }}>
-          {!previewMode && (
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--card-border)' }}>
-              <button
-                onClick={() => setShowAddSheet(true)}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                  width: '100%', padding: '10px',
-                  background: 'var(--primary)', borderRadius: '8px',
-                  border: '2px solid var(--card-border)',
-                  color: 'var(--bg-color)',
-                  fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
-                  letterSpacing: '0.03em', cursor: 'pointer',
-                }}
-              >
-                <Plus size={15} /> Add Source
-              </button>
-            </div>
-          )}
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--card-border)' }}>
+            <button
+              onClick={() => !previewMode && setShowAddSheet(true)}
+              disabled={previewMode}
+              title={previewMode ? "Not available in preview mode" : undefined}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                width: '100%', padding: '10px',
+                background: 'var(--primary)', borderRadius: '8px',
+                border: '2px solid var(--card-border)',
+                color: 'var(--bg-color)',
+                fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
+                letterSpacing: '0.03em',
+                cursor: previewMode ? 'not-allowed' : 'pointer',
+                opacity: previewMode ? 0.4 : 1,
+              }}
+            >
+              <Plus size={15} /> Add Source
+            </button>
+          </div>
 
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '60px', color: 'var(--text-dim)' }}>
@@ -935,19 +945,21 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
         <SourceInfoSheet
           video={libInfoVideo}
           onClose={() => setLibInfoVideo(null)}
-          onRetry={previewMode ? null : async (id) => { await retryVideo(id); fetchData(); }}
-          onDelete={previewMode ? null : async (id) => { await deleteVideoById(id); setLibInfoVideo(null); fetchData(); }}
+          onRetry={async (id) => { await retryVideo(id); fetchData(); }}
+          onDelete={async (id) => { await deleteVideoById(id); setLibInfoVideo(null); fetchData(); }}
+          previewMode={previewMode}
         />
       )}
       {searchInfoVideo && (
         <SourceInfoSheet
           video={searchInfoVideo}
           onClose={() => setSearchInfoVideo(null)}
-          onRetry={previewMode ? null : async (id) => { await retryVideo(id); fetchData(); }}
-          onDelete={previewMode ? null : async (id) => { await deleteVideoById(id); setSearchInfoVideo(null); fetchData(); }}
+          onRetry={async (id) => { await retryVideo(id); fetchData(); }}
+          onDelete={async (id) => { await deleteVideoById(id); setSearchInfoVideo(null); fetchData(); }}
+          previewMode={previewMode}
         />
       )}
-      {!previewMode && showAddSheet && (
+      {showAddSheet && !previewMode && (
         <AddSourceSheet
           collectionId={collectionId}
           onClose={() => setShowAddSheet(false)}

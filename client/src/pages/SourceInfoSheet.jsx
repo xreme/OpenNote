@@ -15,7 +15,7 @@ function InfoRow({ label, children }) {
   );
 }
 
-export default function SourceInfoSheet({ video, onClose, onRetry, onDelete }) {
+export default function SourceInfoSheet({ video, onClose, onRetry, onDelete, previewMode }) {
   const [retrying, setRetrying] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState(null);
@@ -146,16 +146,18 @@ export default function SourceInfoSheet({ video, onClose, onRetry, onDelete }) {
             )}
             {isFailed && isLink && onRetry && (
               <button
-                onClick={handleRetry}
-                disabled={retrying || deleting}
+                onClick={() => !previewMode && handleRetry()}
+                disabled={previewMode || retrying || deleting}
+                title={previewMode ? "Not available in preview mode" : undefined}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                   width: '100%', padding: '12px',
                   background: 'var(--primary)', color: 'var(--bg-color)',
                   border: '2px solid var(--card-border)', borderRadius: '10px',
                   fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
-                  letterSpacing: '0.03em', cursor: retrying || deleting ? 'not-allowed' : 'pointer',
-                  opacity: retrying || deleting ? 0.6 : 1,
+                  letterSpacing: '0.03em',
+                  cursor: previewMode || retrying || deleting ? 'not-allowed' : 'pointer',
+                  opacity: previewMode ? 0.4 : (retrying || deleting ? 0.6 : 1),
                 }}
               >
                 {retrying ? <Loader2 size={14} className="spin" /> : <RotateCcw size={14} />}
@@ -164,16 +166,18 @@ export default function SourceInfoSheet({ video, onClose, onRetry, onDelete }) {
             )}
             {onDelete && (
               <button
-                onClick={handleDelete}
-                disabled={retrying || deleting}
+                onClick={() => !previewMode && handleDelete()}
+                disabled={previewMode || retrying || deleting}
+                title={previewMode ? "Not available in preview mode" : undefined}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                   width: '100%', padding: '12px',
                   background: 'transparent', color: '#d94f4f',
                   border: '2px solid rgba(217,79,79,0.35)', borderRadius: '10px',
                   fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
-                  letterSpacing: '0.03em', cursor: retrying || deleting ? 'not-allowed' : 'pointer',
-                  opacity: retrying || deleting ? 0.6 : 1,
+                  letterSpacing: '0.03em',
+                  cursor: previewMode || retrying || deleting ? 'not-allowed' : 'pointer',
+                  opacity: previewMode ? 0.4 : (retrying || deleting ? 0.6 : 1),
                 }}
               >
                 {deleting ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}

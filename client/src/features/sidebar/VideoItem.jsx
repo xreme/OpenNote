@@ -233,90 +233,92 @@ export default function VideoItem({
           >
             <Eye size={14} />
           </button>
-          {!previewMode && video.status === "completed" && (
+          {video.status === "completed" && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onOpenFolder(video.folderPath);
+                if (!previewMode) onOpenFolder(video.folderPath);
               }}
+              disabled={previewMode}
               style={{
                 background: "none",
                 border: "none",
                 color: "var(--text-dim)",
-                cursor: "pointer",
+                cursor: previewMode ? "not-allowed" : "pointer",
                 padding: "4px",
+                opacity: previewMode ? 0.35 : 1,
               }}
-              title="Open in Folder"
+              title={previewMode ? "Not available in preview mode" : "Open in Folder"}
             >
               <Folder size={14} />
             </button>
           )}
-          {!previewMode && !isEditing && (
+          {!isEditing && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                startEditing();
+                if (!previewMode) startEditing();
               }}
+              disabled={previewMode}
               style={{
                 background: "none",
                 border: "none",
                 color: "var(--text-dim)",
-                cursor: "pointer",
+                cursor: previewMode ? "not-allowed" : "pointer",
                 padding: "4px",
+                opacity: previewMode ? 0.35 : 1,
               }}
-              title="Rename"
+              title={previewMode ? "Not available in preview mode" : "Rename"}
             >
               <Edit2 size={14} />
             </button>
           )}
-          {!previewMode && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(video.id);
-              }}
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--text-dim)",
-                cursor: "pointer",
-                padding: "4px",
-              }}
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!previewMode) onDelete(video.id);
+            }}
+            disabled={previewMode}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-dim)",
+              cursor: previewMode ? "not-allowed" : "pointer",
+              padding: "4px",
+              opacity: previewMode ? 0.35 : 1,
+            }}
+            title={previewMode ? "Not available in preview mode" : "Delete"}
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
       </div>
       {showInfo && <SourceInfoModal video={video} onClose={() => setShowInfo(false)} />}
 
-      {!previewMode && (
-        <div className="reorder-btns">
-          <button
-            className="reorder-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveUp();
-            }}
-            disabled={isFirst}
-            title="Move Up"
-          >
-            <ArrowUp size={12} />
-          </button>
-          <button
-            className="reorder-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveDown();
-            }}
-            disabled={isLast}
-            title="Move Down"
-          >
-            <ArrowDown size={12} />
-          </button>
-        </div>
-      )}
+      <div className="reorder-btns" style={previewMode ? { opacity: 0.35, pointerEvents: "none" } : undefined}>
+        <button
+          className="reorder-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveUp();
+          }}
+          disabled={isFirst || previewMode}
+          title={previewMode ? "Not available in preview mode" : "Move Up"}
+        >
+          <ArrowUp size={12} />
+        </button>
+        <button
+          className="reorder-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveDown();
+          }}
+          disabled={isLast || previewMode}
+          title={previewMode ? "Not available in preview mode" : "Move Down"}
+        >
+          <ArrowDown size={12} />
+        </button>
+      </div>
     </div>
   );
 }
