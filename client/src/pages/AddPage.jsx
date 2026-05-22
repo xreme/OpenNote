@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { CheckCircle, AlertCircle, ChevronDown, Loader2, ChevronLeft } from "lucide-react";
+import usePreviewMode from "../hooks/usePreviewMode";
 
 export default function AddPage() {
+  const previewMode = usePreviewMode();
   const [collections, setCollections] = useState([]);
   const [collectionId, setCollectionId] = useState("");
   const [url, setUrl] = useState("");
@@ -79,6 +81,20 @@ export default function AddPage() {
       setLoading(false);
     }
   };
+
+  if (previewMode) {
+    return (
+      <div style={{ ...s.page, justifyContent: "center" }}>
+        <div style={{ ...s.card, alignItems: "center", textAlign: "center", gap: "16px" }}>
+          <h2 style={{ margin: 0, fontSize: "20px" }}>Preview Mode</h2>
+          <p style={{ margin: 0, color: "var(--text-dim)", fontSize: "14px" }}>
+            Adding content is not available in preview mode.
+          </p>
+          <a href="/library" style={{ ...s.btn, textDecoration: "none", textAlign: "center" }}>Go to Library</a>
+        </div>
+      </div>
+    );
+  }
 
   if (status === "success") {
     return (

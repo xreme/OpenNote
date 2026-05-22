@@ -15,6 +15,7 @@ export default function NotesView({
   onRenameNote,
   onDeleteNote,
   onDownloadNote,
+  previewMode,
 }) {
   const { width: notesWidth, isResizing: notesResizing, onMouseDown: onNotesMouseDown } =
     useResizable({ key: "notes-sidebar", defaultWidth: 280, minWidth: 180, maxWidth: 420 });
@@ -33,6 +34,7 @@ export default function NotesView({
         onSelectNote={setSelectedNote}
         onRenameNote={onRenameNote}
         onDeleteNote={onDeleteNote}
+        previewMode={previewMode}
       />
       {notesSidebarVisible && <ResizeHandle onMouseDown={onNotesMouseDown} active={notesResizing} />}
       <div className="note-content-area">

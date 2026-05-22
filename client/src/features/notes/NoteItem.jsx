@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Trash2, Edit2, X, Check } from "lucide-react";
 
-export default function NoteItem({ note, selected, onSelect, onRename, onDelete }) {
+export default function NoteItem({ note, selected, onSelect, onRename, onDelete, previewMode }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(note.filename.replace(".md", ""));
 
@@ -88,7 +88,7 @@ export default function NoteItem({ note, selected, onSelect, onRename, onDelete 
           </>
         )}
       </div>
-      {!isEditing && (
+      {!previewMode && !isEditing && (
         <button
           className="rename-btn"
           onClick={(e) => {
@@ -100,27 +100,29 @@ export default function NoteItem({ note, selected, onSelect, onRename, onDelete 
           <Edit2 size={14} />
         </button>
       )}
-      <button
-        className="delete-btn"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(note.filename);
-        }}
-        title="Delete"
-        style={{
-          backgroundColor: "#ef4444",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          padding: "4px 8px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-        }}
-      >
-        <Trash2 size={14} /> Delete
-      </button>
+      {!previewMode && (
+        <button
+          className="delete-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(note.filename);
+          }}
+          title="Delete"
+          style={{
+            backgroundColor: "#ef4444",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            padding: "4px 8px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <Trash2 size={14} /> Delete
+        </button>
+      )}
     </div>
   );
 }

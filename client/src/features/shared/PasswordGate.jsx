@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import rawAxios from "axios";
 import { PASSWORD_KEY } from "../../services/axiosInstance";
+import usePreviewMode from "../../hooks/usePreviewMode";
 
 const styles = {
   backdrop: {
@@ -72,6 +73,7 @@ async function ping(password) {
 }
 
 export default function PasswordGate({ children }) {
+  const previewMode = usePreviewMode();
   const [status, setStatus] = useState("checking");
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -125,7 +127,7 @@ export default function PasswordGate({ children }) {
     }
   };
 
-  if (status === "unlocked") return children;
+  if (previewMode || status === "unlocked") return children;
 
   return (
     <div style={styles.backdrop}>

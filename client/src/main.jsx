@@ -5,6 +5,7 @@ import App from './App.jsx'
 import AddPage from './pages/AddPage.jsx'
 import MobileCollectionsPage from './pages/MobileCollectionsPage.jsx'
 import PasswordGate from './features/shared/PasswordGate.jsx'
+import { PreviewProvider } from './hooks/usePreviewMode'
 
 const PATH_TO_TAB = {
   '/mobile':   'Library',
@@ -18,10 +19,12 @@ const mobileTab = PATH_TO_TAB[path]
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <PasswordGate>
-      {path === '/add'    ? <AddPage />
-        : mobileTab       ? <MobileCollectionsPage initialTab={mobileTab} />
-        : <App />}
-    </PasswordGate>
+    <PreviewProvider>
+      <PasswordGate>
+        {path === '/add'    ? <AddPage />
+          : mobileTab       ? <MobileCollectionsPage initialTab={mobileTab} />
+          : <App />}
+      </PasswordGate>
+    </PreviewProvider>
   </StrictMode>,
 )
