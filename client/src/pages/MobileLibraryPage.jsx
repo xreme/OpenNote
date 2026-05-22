@@ -7,6 +7,8 @@ import remarkGfm from "remark-gfm";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Sparkles,
   Loader2,
   FileVideo,
@@ -19,6 +21,7 @@ import {
 import MobileNav from "./MobileNav";
 import SourceInfoSheet from "./SourceInfoSheet";
 import AddSourceSheet from "./AddSourceSheet";
+import VideoPlayer from "../features/videos/VideoPlayer";
 
 const STORAGE_KEY = "opennote-active-collection";
 const POLL_MS = 5000;
@@ -95,6 +98,10 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const hasPreview = !isNote && item.status === "completed" && (item.outputPath || item.sourceUrl);
+  const isPortrait = !!(item.sourceUrl && !item.outputPath && /tiktok\.com|instagram\.com/i.test(item.sourceUrl));
 
   const canGenerate = !isNote && item.status === "completed" && !content;
 
@@ -204,10 +211,61 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
           overscrollBehavior: "contain",
-          padding: "20px 16px",
-          paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+          padding: "0 0 calc(24px + env(safe-area-inset-bottom))",
         }}
       >
+        {hasPreview && (
+          <div style={{ borderBottom: "2px solid var(--card-border)" }}>
+            <button
+              onClick={() => setPreviewOpen((v) => !v)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                padding: "10px 16px",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-main)",
+                fontFamily: "inherit",
+                fontSize: "11px",
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              Preview
+              {previewOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {previewOpen && (
+              <div
+                style={{
+                  padding: "0 16px 16px",
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <div
+                  style={{
+                    width: isPortrait ? "280px" : "100%",
+                    aspectRatio: isPortrait ? "9/16" : "16/9",
+                    maxHeight: isPortrait ? "420px" : "240px",
+                    background: "#1a1a18",
+                    borderRadius: "var(--radius)",
+                    overflow: "hidden",
+                    border: "var(--border-width) solid var(--border-color)",
+                    position: "relative",
+                  }}
+                >
+                  <VideoPlayer selectedVideo={item} videoRef={null} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ padding: "20px 16px 0" }}>
         {generating ? (
           <div
             style={{
@@ -293,6 +351,7 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
             )}
           </div>
         )}
+        </div>
       </main>
     </div>
   );
