@@ -96,7 +96,21 @@ function processCollections() {
 
   for (const file of files) {
     const filePath = path.join(COLLECTIONS_DIR, file);
-    const raw = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    let rawText = fs.readFileSync(filePath, "utf8");
+    // Strip BOM if present
+    if (rawText.charCodeAt(0) === 0xfeff) rawText = rawText.slice(1);
+
+    let raw;
+    try {
+      raw = JSON.parse(rawText);
+    } catch (e) {
+      const preview = rawText.slice(0, 80).replace(/\n/g, "\\n");
+      console.error(`[SKIP] ${file} — invalid JSON: ${e.message}`);
+      console.error(`       First 80 chars: "${preview}"`);
+      warnings.push(`  [${file}] Skipped — file is not valid JSON`);
+      continue;
+    }
+
     const collectionName = raw.title || file;
     let collectionChanged = false;
     let fixedInCollection = 0;
@@ -128,7 +142,18 @@ function processDbJson() {
     return;
   }
 
-  const raw = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
+  let rawText = fs.readFileSync(DB_FILE, "utf8");
+  if (rawText.charCodeAt(0) === 0xfeff) rawText = rawText.slice(1);
+
+  let raw;
+  try {
+    raw = JSON.parse(rawText);
+  } catch (e) {
+    console.error(`\n[SKIP] db.json — invalid JSON: ${e.message}`);
+    warnings.push(`  [db.json] Skipped — file is not valid JSON`);
+    return;
+  }
+
   let fixedCount = 0;
 
   for (const [vidId, video] of Object.entries(raw.videos || {})) {
