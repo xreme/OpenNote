@@ -3,7 +3,10 @@ const { ENCODER_PRESETS } = require("../config");
 const { indexAllPending } = require("../services/videoService");
 
 const getSettingsHandler = (req, res) => {
-  res.json(getSettings());
+  const settings = getSettings();
+  const { apiKey, ...safeSettings } = settings;
+  if (apiKey) safeSettings.hasApiKey = true;
+  res.json(safeSettings);
 };
 
 const saveSettingsHandler = (req, res) => {

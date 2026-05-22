@@ -6,6 +6,7 @@ const { YTDLP_BIN, YTDLP_OPTS, PROCESSED_DIR } = require("../config");
 const { addVideoToCollection, getUniqueVideoName } = require("../repositories/videoRepository");
 const { getCleanName } = require("../utils/fileHelpers");
 const { processUrlVideo } = require("../services/videoService");
+const { sanitizeVideo } = require("../utils/sanitize");
 
 const uploadFromUrl = async (req, res) => {
   const { url, collectionId } = req.body;
@@ -45,7 +46,7 @@ const uploadFromUrl = async (req, res) => {
       };
 
       addVideoToCollection(collectionId, videoInfo);
-      res.json(videoInfo);
+      res.json(sanitizeVideo(videoInfo));
 
       processUrlVideo(id, url, transcriptPath, txtPath, outputPathFull, relativeOutputPath);
     },

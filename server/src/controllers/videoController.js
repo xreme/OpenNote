@@ -8,13 +8,14 @@ const { PROCESSED_DIR } = require("../config");
 const { processUrlVideo } = require("../services/videoService");
 const path = require("path");
 const fs = require("fs");
+const { sanitizeVideo } = require("../utils/sanitize");
 
 const listVideos = (req, res) => {
   const { collection } = req.query;
   if (!collection) return res.status(400).json({ error: "collection query param is required" });
 
   const videoStatus = getVideoStatus(collection);
-  const orderedVideos = videoStatus.order.map((id) => videoStatus.videos[id]).filter(Boolean);
+  const orderedVideos = videoStatus.order.map((id) => sanitizeVideo(videoStatus.videos[id])).filter(Boolean);
   res.json(orderedVideos);
 };
 
@@ -76,7 +77,7 @@ const renameVideo = (req, res) => {
 
   video.originalName = originalName;
   saveCollection(collectionId);
-  res.json(videoStatus.videos[id]);
+  res.json(sanitizeVideo(videoStatus.videos[id]));
 };
 
 const deleteVideo = (req, res) => {

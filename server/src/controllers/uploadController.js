@@ -5,6 +5,7 @@ const { UPLOADS_DIR, PROCESSED_DIR } = require("../config");
 const { addVideoToCollection, getUniqueVideoName } = require("../repositories/videoRepository");
 const { getCleanName } = require("../utils/fileHelpers");
 const { processVideo } = require("../services/videoService");
+const { sanitizeVideo } = require("../utils/sanitize");
 
 const uploadVideos = async (req, res) => {
   if (!req.files || Object.keys(req.files).length === 0) {
@@ -46,7 +47,7 @@ const uploadVideos = async (req, res) => {
     };
 
     addVideoToCollection(collectionId, videoInfo);
-    uploadedVideos.push(videoInfo);
+    uploadedVideos.push(sanitizeVideo(videoInfo));
 
     processVideo(id, inputPath, outputPathFull, transcriptPath, txtPath);
   }
