@@ -1,8 +1,21 @@
 const fs = require("fs");
 const path = require("path");
-const { COLLECTIONS_DIR } = require("../config");
+const { COLLECTIONS_DIR, PROCESSED_DIR } = require("../config");
 
 const collections = {};
+
+// If a video's folderPath no longer exists but a matching folder is present in the
+// current PROCESSED_DIR (e.g. after the project was moved), rewrite all path fields.
+const normalizeVideoPaths = (video) => {
+  if (!video.folderPath || fs.existsSync(video.folderPath)) return null;
+  const folderName = path.basename(video.folderPath);
+  const newFolderPath = path.join(PROCESSED_DIR, folderName);
+  if (!fs.existsSync(newFolderPath)) return null;
+  const updated = { ...video, folderPath: newFolderPath };
+  if (video.transcriptPath) updated.transcriptPath = path.join(newFolderPath, path.basename(video.transcriptPath));
+  if (video.txtPath) updated.txtPath = path.join(newFolderPath, path.basename(video.txtPath));
+  return updated;
+};
 
 const slugify = (title) =>
   title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "collection";
@@ -22,17 +35,32 @@ const saveCollection = (id) => {
 const loadAllCollections = () => {
   ensureDir();
   const files = fs.readdirSync(COLLECTIONS_DIR).filter((f) => f.endsWith(".json"));
+  const needsSave = new Set();
+
   files.forEach((file) => {
     const id = path.basename(file, ".json");
     try {
       const raw = JSON.parse(fs.readFileSync(path.join(COLLECTIONS_DIR, file), "utf8"));
+      const videos = {};
+      let pathsFixed = false;
+      for (const [vidId, vid] of Object.entries(raw.videos || {})) {
+        const normalized = normalizeVideoPaths(vid);
+        if (normalized) {
+          videos[vidId] = normalized;
+          pathsFixed = true;
+          console.log(`[${vidId}] Normalized stale path in collection ${id}`);
+        } else {
+          videos[vidId] = vid;
+        }
+      }
       collections[id] = {
         title: raw.title || id,
         createdAt: raw.createdAt || new Date().toISOString(),
         modifiedAt: raw.modifiedAt || new Date().toISOString(),
-        videos: raw.videos || {},
+        videos,
         order: raw.order || [],
       };
+      if (pathsFixed) needsSave.add(id);
     } catch (e) {
       console.error(`Failed to load collection ${id}:`, e);
     }
@@ -41,6 +69,8 @@ const loadAllCollections = () => {
   if (Object.keys(collections).length === 0) {
     createCollection("Default Collection");
   }
+
+  needsSave.forEach((id) => saveCollection(id));
 };
 
 const listCollections = () =>

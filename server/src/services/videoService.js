@@ -6,7 +6,7 @@ const { exec } = require("child_process");
 const OpenAI = require("openai");
 
 const { SETTINGS_FILE, ENCODER_PRESETS, TRANSCRIBE_SCRIPT, YTDLP_BIN, YTDLP_OPTS, UPLOADS_DIR } = require("../config");
-const { findVideoById, updateStatus } = require("../repositories/videoRepository");
+const { findVideoById, updateStatus, getAllVideosAcrossCollections } = require("../repositories/videoRepository");
 const { getSettings } = require("./settingsService");
 
 const execWithRetry = (command, { retries = 3, delayMs = 5000 } = {}) =>
@@ -289,4 +289,17 @@ const processUrlVideo = async (id, url, transcriptPath, txtPath, outputPathFull,
   indexVideo(id);
 };
 
-module.exports = { processVideo, processUrlVideo, indexVideo };
+const indexAllPending = () => {
+  const allVideos = getAllVideosAcrossCollections();
+  Object.entries(allVideos).forEach(([id, video]) => {
+    if (video.status === "completed" && video.folderPath) {
+      const embeddingsPath = path.join(video.folderPath, "embeddings.json");
+      if (!fs.existsSync(embeddingsPath)) {
+        console.log(`[${id}] Triggering pending indexing after settings update...`);
+        indexVideo(id);
+      }
+    }
+  });
+};
+
+module.exports = { processVideo, processUrlVideo, indexVideo, indexAllPending };

@@ -1,12 +1,17 @@
 const { getSettings, saveSettings } = require("../services/settingsService");
 const { ENCODER_PRESETS } = require("../config");
+const { indexAllPending } = require("../services/videoService");
 
 const getSettingsHandler = (req, res) => {
   res.json(getSettings());
 };
 
 const saveSettingsHandler = (req, res) => {
+  const prev = getSettings();
   saveSettings(req.body);
+  if (req.body.apiKey && req.body.apiKey !== prev.apiKey) {
+    indexAllPending();
+  }
   res.json({ success: true });
 };
 
