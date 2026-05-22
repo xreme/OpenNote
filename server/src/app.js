@@ -3,8 +3,9 @@ const fileUpload = require("express-fileupload");
 const cors = require("cors");
 const fs = require("fs");
 
-const { PROCESSED_DIR, CLIENT_DIST, UPLOADS_DIR, NOTES_DIR, COLLECTIONS_DIR } = require("./config");
+const { PROCESSED_DIR, CLIENT_DIST, UPLOADS_DIR, NOTES_DIR, COLLECTIONS_DIR, PREVIEW_MODE } = require("./config");
 const requirePassword = require("./middleware/auth");
+const readOnly = require("./middleware/readOnly");
 const { uploadLimiter, aiLimiter } = require("./middleware/rateLimiter");
 const videoRoutes = require("./routes/videoRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
@@ -44,14 +45,20 @@ app.use(
 // Serve React static files
 app.use(express.static(CLIENT_DIST));
 
+// Preview status endpoint — no auth required
+app.get("/api/preview-status", (req, res) => {
+  res.json({ previewMode: PREVIEW_MODE });
+});
+
 // API routes — all require password when SITE_PASSWORD env var is set
-app.use("/videos", requirePassword, videoRoutes);
-app.use("/upload", requirePassword, uploadLimiter, uploadRoutes);
-app.use("/notes", requirePassword, notesRoutes);
-app.use("/settings", requirePassword, settingsRoutes);
+// readOnly blocks non-GET methods when PREVIEW_MODE is enabled
+app.use("/videos", requirePassword, readOnly, videoRoutes);
+app.use("/upload", requirePassword, readOnly, uploadLimiter, uploadRoutes);
+app.use("/notes", requirePassword, readOnly, notesRoutes);
+app.use("/settings", requirePassword, readOnly, settingsRoutes);
 app.use("/chat", requirePassword, aiLimiter, chatRoutes);
-app.use("/collections", requirePassword, collectionsRoutes);
-app.use("/", requirePassword, systemRoutes); // includes /ping and /generate-notes
+app.use("/collections", requirePassword, readOnly, collectionsRoutes);
+app.use("/", requirePassword, readOnly, systemRoutes); // includes /ping and /generate-notes
 
 // Catch-all route to serve index.html for SPA
 app.get("/*path", (req, res) => {

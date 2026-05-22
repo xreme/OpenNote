@@ -12,6 +12,7 @@ import useSearch from "./hooks/useSearch";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import useCollections from "./hooks/useCollections";
 import useResizable from "./hooks/useResizable";
+import usePreviewMode from "./hooks/usePreviewMode";
 import ResizeHandle from "./features/shared/ResizeHandle";
 
 import { Sidebar } from "./features/sidebar";
@@ -27,6 +28,7 @@ import {
 } from "./features/modals";
 
 function App() {
+  const previewMode = usePreviewMode();
   const osQuery = window.matchMedia("(prefers-color-scheme: dark)");
   const [darkMode, setDarkMode] = useState(() => osQuery.matches);
 
@@ -231,6 +233,7 @@ function App() {
         collections={collections}
         activeCollectionId={activeCollectionId}
         onSwitchCollection={setActiveCollection}
+        previewMode={previewMode}
       />
       {sidebarVisible && <ResizeHandle onMouseDown={onSidebarMouseDown} active={sidebarResizing} />}
 
@@ -255,6 +258,7 @@ function App() {
                 notes={notes}
                 generating={generating}
                 onGenerateSummary={handleGenerateSummary}
+                previewMode={previewMode}
               />
             ) : (
               <EmptyVideoState
@@ -275,6 +279,7 @@ function App() {
             onRenameNote={handleRenameNote}
             onDeleteNote={deleteNote}
             onDownloadNote={downloadNote}
+            previewMode={previewMode}
           />
         )}
       </div>
@@ -307,6 +312,7 @@ function App() {
         onCreateCollection={createCollection}
         onRenameCollection={renameCollection}
         onDeleteCollection={deleteCollection}
+        previewMode={previewMode}
       />
 
       <GlobalSearchModal

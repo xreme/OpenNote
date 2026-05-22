@@ -25,6 +25,7 @@ export default function VideoView({
   notes,
   generating,
   onGenerateSummary,
+  previewMode,
 }) {
   const [activeTab, setActiveTab] = useState("transcript");
   const [bottomExpanded, setBottomExpanded] = useState(false);
@@ -142,6 +143,7 @@ export default function VideoView({
             summaryContent={summaryContent}
             generating={generating}
             onGenerate={handleGenerate}
+            previewMode={previewMode}
           />
         )}
       </div>

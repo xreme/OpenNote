@@ -14,6 +14,7 @@ import {
 import MobileNav from './MobileNav';
 import SourceInfoSheet from './SourceInfoSheet';
 import AddSourceSheet from './AddSourceSheet';
+import usePreviewMode from '../hooks/usePreviewMode';
 
 const STORAGE_KEY = 'opennote-active-collection';
 const POLL_MS = 5000;
@@ -74,7 +75,7 @@ function formatTimestamp(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-function DetailView({ item, collectionId, onBack, onRefresh }) {
+function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
   const isNote = item._type === 'note';
   const title = isNote
     ? item.filename.replace(/_/g, ' ').replace(/\.[^.]+$/, '')
@@ -86,7 +87,7 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
   const [showInfo, setShowInfo] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
 
-  const canGenerate = !isNote && item.status === 'completed' && !content;
+  const canGenerate = !previewMode && !isNote && item.status === 'completed' && !content;
   const transcript = !isNote ? (item.transcript ?? []) : [];
 
   const handleGenerate = async () => {
@@ -157,8 +158,8 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
         <SourceInfoSheet
           video={item}
           onClose={() => setShowInfo(false)}
-          onRetry={async (id) => { await retryVideo(id); if (onRefresh) onRefresh(); setShowInfo(false); }}
-          onDelete={async (id) => { await deleteVideoById(id); if (onRefresh) onRefresh(); onBack(); }}
+          onRetry={previewMode ? null : async (id) => { await retryVideo(id); if (onRefresh) onRefresh(); setShowInfo(false); }}
+          onDelete={previewMode ? null : async (id) => { await deleteVideoById(id); if (onRefresh) onRefresh(); onBack(); }}
         />
       )}
 
@@ -274,6 +275,7 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
 }
 
 export default function MobileCollectionsPage({ initialTab = 'Library' }) {
+  const previewMode = usePreviewMode();
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // Shared state
@@ -426,6 +428,7 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
         collectionId={collectionId}
         onBack={clearDetail}
         onRefresh={fetchData}
+        previewMode={previewMode}
       />
     );
   }
@@ -487,22 +490,24 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
           WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain',
           paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
         }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--card-border)' }}>
-            <button
-              onClick={() => setShowAddSheet(true)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                width: '100%', padding: '10px',
-                background: 'var(--primary)', borderRadius: '8px',
-                border: '2px solid var(--card-border)',
-                color: 'var(--bg-color)',
-                fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
-                letterSpacing: '0.03em', cursor: 'pointer',
-              }}
-            >
-              <Plus size={15} /> Add Source
-            </button>
-          </div>
+          {!previewMode && (
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--card-border)' }}>
+              <button
+                onClick={() => setShowAddSheet(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  width: '100%', padding: '10px',
+                  background: 'var(--primary)', borderRadius: '8px',
+                  border: '2px solid var(--card-border)',
+                  color: 'var(--bg-color)',
+                  fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
+                  letterSpacing: '0.03em', cursor: 'pointer',
+                }}
+              >
+                <Plus size={15} /> Add Source
+              </button>
+            </div>
+          )}
 
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '60px', color: 'var(--text-dim)' }}>
@@ -877,19 +882,19 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
         <SourceInfoSheet
           video={libInfoVideo}
           onClose={() => setLibInfoVideo(null)}
-          onRetry={async (id) => { await retryVideo(id); fetchData(); }}
-          onDelete={async (id) => { await deleteVideoById(id); setLibInfoVideo(null); fetchData(); }}
+          onRetry={previewMode ? null : async (id) => { await retryVideo(id); fetchData(); }}
+          onDelete={previewMode ? null : async (id) => { await deleteVideoById(id); setLibInfoVideo(null); fetchData(); }}
         />
       )}
       {searchInfoVideo && (
         <SourceInfoSheet
           video={searchInfoVideo}
           onClose={() => setSearchInfoVideo(null)}
-          onRetry={async (id) => { await retryVideo(id); fetchData(); }}
-          onDelete={async (id) => { await deleteVideoById(id); setSearchInfoVideo(null); fetchData(); }}
+          onRetry={previewMode ? null : async (id) => { await retryVideo(id); fetchData(); }}
+          onDelete={previewMode ? null : async (id) => { await deleteVideoById(id); setSearchInfoVideo(null); fetchData(); }}
         />
       )}
-      {showAddSheet && (
+      {!previewMode && showAddSheet && (
         <AddSourceSheet
           collectionId={collectionId}
           onClose={() => setShowAddSheet(false)}

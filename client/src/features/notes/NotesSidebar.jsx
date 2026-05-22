@@ -14,6 +14,7 @@ export default function NotesSidebar({
   onSelectNote,
   onRenameNote,
   onDeleteNote,
+  previewMode,
 }) {
   return (
     <div
@@ -65,6 +66,7 @@ export default function NotesSidebar({
             onSelect={onSelectNote}
             onRename={onRenameNote}
             onDelete={onDeleteNote}
+            previewMode={previewMode}
           />
         ))}
       </div>

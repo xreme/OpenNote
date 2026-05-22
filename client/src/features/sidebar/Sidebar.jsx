@@ -45,6 +45,7 @@ export default function Sidebar({
   collections,
   activeCollectionId,
   onSwitchCollection,
+  previewMode,
 }) {
   return (
     <div
@@ -62,13 +63,15 @@ export default function Sidebar({
           </button>
           <h1 className="logo">OpenNote</h1>
         </div>
-        <button
-          className="upload-btn-round"
-          onClick={() => setShowAddModal(true)}
-          title="Add Content"
-        >
-          <Plus size={20} />
-        </button>
+        {!previewMode && (
+          <button
+            className="upload-btn-round"
+            onClick={() => setShowAddModal(true)}
+            title="Add Content"
+          >
+            <Plus size={20} />
+          </button>
+        )}
       </div>
 
       <div className="search-container">
@@ -131,6 +134,7 @@ export default function Sidebar({
               onMoveDown={() => moveVideo(indexInAll, 1)}
               isFirst={indexInAll === 0}
               isLast={indexInAll === videos.length - 1}
+              previewMode={previewMode}
             />
           );
         })}
@@ -145,13 +149,15 @@ export default function Sidebar({
           gap: "8px",
         }}
       >
-        <button
-          className="action-btn-primary"
-          onClick={() => setShowGenerateModal(true)}
-          title="Generate AI Notes"
-        >
-          <Sparkles size={16} /> Generate Notes
-        </button>
+        {!previewMode && (
+          <button
+            className="action-btn-primary"
+            onClick={() => setShowGenerateModal(true)}
+            title="Generate AI Notes"
+          >
+            <Sparkles size={16} /> Generate Notes
+          </button>
+        )}
         <button
           className="action-btn-secondary"
           onClick={() => setShowExportModal(true)}

@@ -13,6 +13,7 @@ const SETTINGS_FILE = path.join(SERVER_DIR, "settings.json");
 const NOTES_DIR = path.join(DATA_DIR, "notes");
 const CLIENT_DIST = path.join(PROJECT_DIR, "client", "dist");
 const TRANSCRIBE_SCRIPT = path.join(SERVER_DIR, "transcribe.py");
+const PREVIEW_MODE = process.env.PREVIEW_MODE === "true";
 const YTDLP_BIN = process.env.YTDLP_BIN || "yt-dlp";
 const YTDLP_OPTS = "--js-runtimes node";
 
@@ -37,6 +38,7 @@ const ENCODER_PRESETS = {
 
 module.exports = {
   PORT,
+  PREVIEW_MODE,
   UPLOADS_DIR,
   PROCESSED_DIR,
   COLLECTIONS_DIR,

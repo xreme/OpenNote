@@ -120,6 +120,7 @@ export default function VideoItem({
   onMoveDown,
   isFirst,
   isLast,
+  previewMode,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(video.originalName);
@@ -232,7 +233,7 @@ export default function VideoItem({
           >
             <Eye size={14} />
           </button>
-          {video.status === "completed" && (
+          {!previewMode && video.status === "completed" && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -250,7 +251,7 @@ export default function VideoItem({
               <Folder size={14} />
             </button>
           )}
-          {!isEditing && (
+          {!previewMode && !isEditing && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -268,50 +269,54 @@ export default function VideoItem({
               <Edit2 size={14} />
             </button>
           )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(video.id);
-            }}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--text-dim)",
-              cursor: "pointer",
-              padding: "4px",
-            }}
-            title="Delete"
-          >
-            <Trash2 size={14} />
-          </button>
+          {!previewMode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(video.id);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--text-dim)",
+                cursor: "pointer",
+                padding: "4px",
+              }}
+              title="Delete"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       </div>
       {showInfo && <SourceInfoModal video={video} onClose={() => setShowInfo(false)} />}
 
-      <div className="reorder-btns">
-        <button
-          className="reorder-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveUp();
-          }}
-          disabled={isFirst}
-          title="Move Up"
-        >
-          <ArrowUp size={12} />
-        </button>
-        <button
-          className="reorder-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveDown();
-          }}
-          disabled={isLast}
-          title="Move Down"
-        >
-          <ArrowDown size={12} />
-        </button>
-      </div>
+      {!previewMode && (
+        <div className="reorder-btns">
+          <button
+            className="reorder-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveUp();
+            }}
+            disabled={isFirst}
+            title="Move Up"
+          >
+            <ArrowUp size={12} />
+          </button>
+          <button
+            className="reorder-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveDown();
+            }}
+            disabled={isLast}
+            title="Move Down"
+          >
+            <ArrowDown size={12} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
