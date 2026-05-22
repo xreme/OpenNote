@@ -16,6 +16,7 @@ import SourceInfoSheet from './SourceInfoSheet';
 import AddSourceSheet from './AddSourceSheet';
 import VideoPlayer from '../features/videos/VideoPlayer';
 import usePreviewMode from '../hooks/usePreviewMode';
+import PreviewBanner from '../features/shared/PreviewBanner';
 
 const STORAGE_KEY = 'opennote-active-collection';
 const POLL_MS = 5000;
@@ -499,6 +500,17 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
         <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '0.03em', flexShrink: 0 }}>
           OpenNote
         </span>
+        {previewMode && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '3px',
+            padding: '2px 6px', borderRadius: '20px',
+            fontSize: '8px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase',
+            color: 'var(--primary)', background: 'rgba(200,170,110,0.15)',
+            border: '1px solid rgba(200,170,110,0.3)', whiteSpace: 'nowrap', flexShrink: 0,
+          }}>
+            <Eye size={8} /> Preview
+          </span>
+        )}
         <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
           <select
             value={collectionId}
@@ -942,6 +954,7 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
           onSuccess={fetchData}
         />
       )}
+      {previewMode && <PreviewBanner />}
     </div>
   );
 }

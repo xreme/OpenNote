@@ -12,6 +12,7 @@ import {
   Sparkles,
   MessageSquare,
   ChevronDown,
+  Eye,
 } from "lucide-react";
 import VideoItem from "./VideoItem";
 
@@ -62,6 +63,25 @@ export default function Sidebar({
             <PanelLeftClose size={20} />
           </button>
           <h1 className="logo">OpenNote</h1>
+          {previewMode && (
+            <span style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "2px 8px",
+              borderRadius: "20px",
+              fontSize: "9px",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--primary)",
+              background: "rgba(200,170,110,0.15)",
+              border: "1px solid rgba(200,170,110,0.3)",
+              whiteSpace: "nowrap",
+            }}>
+              <Eye size={10} /> Preview
+            </span>
+          )}
         </div>
         {!previewMode && (
           <button

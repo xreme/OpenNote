@@ -26,6 +26,7 @@ import {
   ExportModal,
   AddContentModal,
 } from "./features/modals";
+import PreviewBanner from "./features/shared/PreviewBanner";
 
 function App() {
   const previewMode = usePreviewMode();
@@ -345,6 +346,8 @@ function App() {
         onUrlUpload={handleUrlUpload}
         collectionId={activeCollectionId}
       />
+
+      {previewMode && <PreviewBanner />}
     </div>
   );
 }

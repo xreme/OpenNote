@@ -51,14 +51,14 @@ app.get("/api/preview-status", (req, res) => {
 });
 
 // API routes — all require password when SITE_PASSWORD env var is set
-// readOnly blocks non-GET methods when PREVIEW_MODE is enabled
-app.use("/videos", requirePassword, readOnly, videoRoutes);
-app.use("/upload", requirePassword, readOnly, uploadLimiter, uploadRoutes);
-app.use("/notes", requirePassword, readOnly, notesRoutes);
-app.use("/settings", requirePassword, readOnly, settingsRoutes);
+// readOnly(msg) blocks non-GET methods when PREVIEW_MODE is enabled
+app.use("/videos", requirePassword, readOnly("Editing videos is not available in preview mode"), videoRoutes);
+app.use("/upload", requirePassword, readOnly("Uploading content is not available in preview mode"), uploadLimiter, uploadRoutes);
+app.use("/notes", requirePassword, readOnly("Editing notes is not available in preview mode"), notesRoutes);
+app.use("/settings", requirePassword, readOnly("Changing settings is not available in preview mode"), settingsRoutes);
 app.use("/chat", requirePassword, aiLimiter, chatRoutes);
-app.use("/collections", requirePassword, readOnly, collectionsRoutes);
-app.use("/", requirePassword, readOnly, systemRoutes); // includes /ping and /generate-notes
+app.use("/collections", requirePassword, readOnly("Managing collections is not available in preview mode"), collectionsRoutes);
+app.use("/", requirePassword, readOnly("This action is not available in preview mode"), systemRoutes); // includes /ping and /generate-notes
 
 // Catch-all route to serve index.html for SPA
 app.get("/*path", (req, res) => {

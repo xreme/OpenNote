@@ -1,0 +1,24 @@
+{
+  "name": "opennote",
+  "version": "1.0.0",
+  "description": "A local, privacy-first AI-powered video transcription and knowledge management tool. Upload videos, get timestamped transcripts, generate structured notes, and chat with your content through a RAG-powered interface.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xreme/OpenNote.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/xreme/OpenNote/issues"
+  },
+  "homepage": "https://github.com/xreme/OpenNote#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
+}
