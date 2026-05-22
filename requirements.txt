@@ -1,0 +1,5 @@
+# torch CPU build — swap index URL for CUDA if GPU support is needed
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+openai-whisper
+yt-dlp
