@@ -52,8 +52,8 @@ export default function MobileChatPage() {
       const res = await sendChatQuery(text, collectionId);
       const { answer, citations } = res.data;
       setMessages(prev => [...prev, { role: 'assistant', text: answer, citations: citations || [] }]);
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', text: 'Something went wrong. Please try again.', error: true }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', text: err.response?.data?.error || 'Something went wrong. Please try again.', error: true }]);
     } finally {
       setLoading(false);
     }

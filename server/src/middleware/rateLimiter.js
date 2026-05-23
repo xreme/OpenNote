@@ -11,7 +11,7 @@ const uploadLimiter = rateLimit({
 
 const aiLimiter = rateLimit({
   windowMs: PREVIEW_MODE ? 60 * 60 * 1000 : 15 * 60 * 1000,
-  max: PREVIEW_MODE ? 5 : 30,
+  max: 30,
   message: {
     error: PREVIEW_MODE
       ? "Preview mode: limited to 5 chat messages per hour. Please wait before trying again."
