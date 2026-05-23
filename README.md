@@ -2,6 +2,8 @@
 
 A local, privacy-first AI-powered video transcription and knowledge management tool. Upload videos, get timestamped transcripts, generate structured notes, and chat with your content through a RAG-powered interface.
 
+**Live demo:** [opennote.oseremeibazebo.dev](https://opennote.oseremeibazebo.dev/)
+
 [![Watch the demo](https://img.youtube.com/vi/ca1qwWn9vFE/maxresdefault.jpg)](https://youtu.be/ca1qwWn9vFE)
 
 ## Getting Started
