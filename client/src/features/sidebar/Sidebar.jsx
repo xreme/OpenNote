@@ -8,6 +8,7 @@ import {
   Plus,
   PanelLeftClose,
   Settings,
+  Github,
   FileText,
   Sparkles,
   MessageSquare,
@@ -248,6 +249,16 @@ export default function Sidebar({
           >
             <Search size={16} /> Search
           </button>
+          <a
+            href="https://github.com/xreme/OpenNote"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="settings-btn"
+            style={{ width: "auto", padding: "8px", textDecoration: "none" }}
+            title="GitHub"
+          >
+            <Github size={16} />
+          </a>
           <button
             onClick={() => setShowSettings(true)}
             className="settings-btn"

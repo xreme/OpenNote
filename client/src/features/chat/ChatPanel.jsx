@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { MessageSquare, Loader2, ArrowUp, FileVideo, ChevronDown, ChevronRight } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function ChatPanel({
   width,
@@ -47,7 +49,13 @@ export default function ChatPanel({
               fontSize: "13px",
               lineHeight: "1.6",
             }}>
-              {msg.text}
+              {msg.role === "assistant" ? (
+                <div className="chat-markdown">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                </div>
+              ) : (
+                msg.text
+              )}
             </div>
             {msg.citations && msg.citations.length > 0 && (
               <div style={{ maxWidth: "90%" }}>

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { getCollections } from '../services/collectionsService';
 import { sendChatQuery } from '../services/chatService';
 import { MessageSquare, ArrowUp, Loader2, FileVideo, ChevronDown, ChevronRight } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import MobileNav from './MobileNav';
 
 const STORAGE_KEY = 'opennote-active-collection';
@@ -186,10 +188,15 @@ export default function MobileChatPage() {
               border: msg.role === 'user' ? 'none' : '2px solid var(--card-border)',
               fontSize: '14px',
               lineHeight: '1.65',
-              whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
             }}>
-              {msg.text}
+              {msg.role === 'assistant' ? (
+                <div className="chat-markdown">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                </div>
+              ) : (
+                msg.text
+              )}
             </div>
 
             {msg.citations && msg.citations.length > 0 && (
