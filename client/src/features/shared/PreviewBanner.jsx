@@ -7,7 +7,8 @@ export default function PreviewBanner() {
   const [dismissed, setDismissed] = useState(
     () => sessionStorage.getItem(DISMISSED_KEY) === "true"
   );
-  const isSmallScreen = window.innerWidth < 900;
+  const mobilePaths = ['/mobile', '/library', '/chat', '/search'];
+  const isSmallScreen = window.innerWidth < 900 && !mobilePaths.includes(window.location.pathname);
 
   if (dismissed) return null;
 
