@@ -12,7 +12,7 @@ import useSearch from "./hooks/useSearch";
 import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import useCollections from "./hooks/useCollections";
 import useResizable from "./hooks/useResizable";
-import usePreviewMode from "./hooks/usePreviewMode";
+import usePreviewMode, { usePreviewModeLoaded } from "./hooks/usePreviewMode";
 import ResizeHandle from "./features/shared/ResizeHandle";
 
 import { Sidebar } from "./features/sidebar";
@@ -25,11 +25,13 @@ import {
   GenerateModal,
   ExportModal,
   AddContentModal,
+  MobilePromptModal,
 } from "./features/modals";
 import PreviewBanner from "./features/shared/PreviewBanner";
 
 function App() {
   const previewMode = usePreviewMode();
+  const previewModeLoaded = usePreviewModeLoaded();
   const osQuery = window.matchMedia("(prefers-color-scheme: dark)");
   const [darkMode, setDarkMode] = useState(() => osQuery.matches);
 
@@ -348,6 +350,7 @@ function App() {
       />
 
       {previewMode && <PreviewBanner />}
+      <MobilePromptModal blocked={!previewModeLoaded || previewMode} />
     </div>
   );
 }

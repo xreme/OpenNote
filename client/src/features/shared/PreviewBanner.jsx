@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, X, Check, MessageSquare, Search, FileText, FileVideo, XCircle } from "lucide-react";
+import { Eye, X, Check, MessageSquare, Search, FileText, FileVideo, XCircle, Smartphone } from "lucide-react";
 
 const DISMISSED_KEY = "preview_banner_dismissed";
 
@@ -7,6 +7,7 @@ export default function PreviewBanner() {
   const [dismissed, setDismissed] = useState(
     () => sessionStorage.getItem(DISMISSED_KEY) === "true"
   );
+  const isSmallScreen = window.innerWidth < 900;
 
   if (dismissed) return null;
 
@@ -101,6 +102,32 @@ export default function PreviewBanner() {
           </div>
         </div>
 
+        {isSmallScreen && (
+          <a
+            href="/mobile"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              width: "100%",
+              padding: "12px",
+              marginBottom: "8px",
+              background: "var(--accent)",
+              border: "var(--border-width) solid var(--border-color)",
+              boxShadow: "var(--shadow-sm)",
+              borderRadius: "var(--radius-sm)",
+              color: "#fff",
+              fontFamily: "inherit",
+              fontSize: "14px",
+              fontWeight: 700,
+              textDecoration: "none",
+              boxSizing: "border-box",
+            }}
+          >
+            <Smartphone size={16} /> Go to mobile site
+          </a>
+        )}
         <button
           onClick={handleDismiss}
           style={{
