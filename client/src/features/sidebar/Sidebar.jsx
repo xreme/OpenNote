@@ -173,11 +173,11 @@ export default function Sidebar({
         <button
           className="action-btn-primary"
           onClick={() => !previewMode && setShowGenerateModal(true)}
-          title={previewMode ? "Not available in preview mode" : "Generate AI Notes"}
+          title={previewMode ? "Not available in preview mode" : "Generate AI Artifact"}
           disabled={previewMode}
           style={previewMode ? { opacity: 0.4, cursor: "not-allowed", pointerEvents: "auto" } : undefined}
         >
-          <Sparkles size={16} /> Generate Notes
+          <Sparkles size={16} /> Generate Artifact
         </button>
         <button
           className="action-btn-secondary"

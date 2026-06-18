@@ -5,7 +5,7 @@ const {
 } = require("../repositories/videoRepository");
 const { getCleanName } = require("../utils/fileHelpers");
 const { PROCESSED_DIR } = require("../config");
-const { processUrlVideo } = require("../services/videoService");
+const { processUrlVideo, downloadVideoLocally } = require("../services/videoService");
 const path = require("path");
 const fs = require("fs");
 const { sanitizeVideo } = require("../utils/sanitize");
@@ -116,4 +116,29 @@ const retryVideo = (req, res) => {
   processUrlVideo(id, video.sourceUrl, video.transcriptPath, video.txtPath, outputPathFull, relativeOutputPath);
 };
 
-module.exports = { listVideos, reorderVideos, renameVideo, deleteVideo, retryVideo };
+const downloadVideo = (req, res) => {
+  const { id } = req.params;
+
+  const found = findVideoById(id);
+  if (!found) return res.status(404).send("Video not found");
+
+  const { video } = found;
+  if (!video.sourceUrl) return res.status(400).json({ error: "Only URL-sourced videos can be downloaded" });
+  if (video.outputPath) return res.status(400).json({ error: "Video is already downloaded locally" });
+  if (video.status === "downloading" || video.status === "compressing") {
+    return res.status(409).json({ error: "Download already in progress" });
+  }
+
+  const cleanName = getCleanName(video.originalName);
+  const folderName = `${id}-${cleanName}`;
+  const videoFolder = path.join(PROCESSED_DIR, folderName);
+  if (!fs.existsSync(videoFolder)) fs.mkdirSync(videoFolder, { recursive: true });
+
+  const outputPathFull = path.join(videoFolder, `${id}-${cleanName}.mp4`);
+  const relativeOutputPath = `/processed/${folderName}/${id}-${cleanName}.mp4`;
+
+  res.json({ success: true });
+  downloadVideoLocally(id, video.sourceUrl, outputPathFull, relativeOutputPath);
+};
+
+module.exports = { listVideos, reorderVideos, renameVideo, deleteVideo, retryVideo, downloadVideo };

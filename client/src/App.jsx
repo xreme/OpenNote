@@ -92,6 +92,8 @@ function App() {
     generating,
     fetchNotes,
     generateNotes,
+    createNote,
+    saveNote,
     renameNote,
     deleteNote,
   } = useNotes(activeCollectionId);
@@ -109,7 +111,14 @@ function App() {
     setShowChatPanel,
     sendChatMessage,
     navigateToCitation,
-  } = useChat({ setViewMode, setSelectedId, seekTo, collectionId: activeCollectionId });
+  } = useChat({
+    setViewMode,
+    setSelectedId,
+    seekTo,
+    collectionId: activeCollectionId,
+    notes,
+    setSelectedNote,
+  });
 
   const {
     showSearch,
@@ -167,24 +176,37 @@ function App() {
     document.body.removeChild(link);
   };
 
-  const handleGenerateNotes = (videoIds) => {
+  const handleGenerateNotes = (videoIds, artifactType, customPrompt) => {
     generateNotes(videoIds, {
+      artifactType,
+      customPrompt,
       onSuccess: (data) => {
         setShowGenerateModal(false);
         setViewMode("notes");
         setSelectedNote({
           filename: data.filename,
           content: data.content,
+          type: data.type,
           createdAt: new Date().toISOString(),
         });
       },
     });
   };
 
-  const handleGenerateSummary = (videoId, onContent) => {
+  const handleGenerateSummary = (videoId, onContent, artifactType, customPrompt) => {
     generateNotes([videoId], {
+      artifactType,
+      customPrompt,
       onSuccess: (data) => {
-        if (onContent) onContent(data.content);
+        if (onContent) onContent(data);
+      },
+    });
+  };
+
+  const handleCreateNote = (videoId, onCreated) => {
+    createNote(videoId, {
+      onSuccess: (data) => {
+        if (onCreated) onCreated(data);
       },
     });
   };
@@ -261,6 +283,8 @@ function App() {
                 notes={notes}
                 generating={generating}
                 onGenerateSummary={handleGenerateSummary}
+                onCreateNote={handleCreateNote}
+                onSaveNote={saveNote}
                 previewMode={previewMode}
               />
             ) : (

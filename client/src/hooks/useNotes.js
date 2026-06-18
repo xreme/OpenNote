@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect } from "react";
 import {
   getNotes,
   generateNotesForVideos,
+  createBlankNote,
+  saveNoteContent,
   renameNoteFile,
   deleteNoteFile,
 } from "../services/notesService";
@@ -28,17 +30,42 @@ export default function useNotes(collectionId) {
     fetchNotes();
   }, [fetchNotes]);
 
-  const generateNotes = async (videoIds, { onSuccess } = {}) => {
+  const generateNotes = async (
+    videoIds,
+    { onSuccess, artifactType = "notes", customPrompt = "" } = {},
+  ) => {
     if (!videoIds || !videoIds.length || !collectionId) return;
     setGenerating(true);
     try {
-      const resp = await generateNotesForVideos(videoIds, collectionId);
+      const resp = await generateNotesForVideos(videoIds, collectionId, artifactType, customPrompt);
       await fetchNotes();
       if (onSuccess) onSuccess(resp.data);
     } catch (err) {
       alert(err.response?.data?.error || "Generation failed");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const createNote = async (videoId, { onSuccess } = {}) => {
+    if (!videoId || !collectionId) return;
+    try {
+      const resp = await createBlankNote(videoId, collectionId);
+      await fetchNotes();
+      if (onSuccess) onSuccess(resp.data);
+    } catch (err) {
+      alert(err.response?.data?.error || "Could not create note");
+    }
+  };
+
+  const saveNote = async (filename, content) => {
+    if (!filename || !collectionId) return;
+    // Optimistically keep the in-memory copy in sync so switching tabs is seamless.
+    setNotes((prev) => prev.map((n) => (n.filename === filename ? { ...n, content } : n)));
+    try {
+      await saveNoteContent(filename, content, collectionId);
+    } catch (err) {
+      console.error("Failed to save note", err);
     }
   };
 
@@ -71,6 +98,8 @@ export default function useNotes(collectionId) {
     generating,
     fetchNotes,
     generateNotes,
+    createNote,
+    saveNote,
     renameNote,
     deleteNote,
   };

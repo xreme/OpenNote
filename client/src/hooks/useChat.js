@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { sendChatQuery } from "../services/chatService";
 
-export default function useChat({ setViewMode, setSelectedId, seekTo, collectionId }) {
+export default function useChat({ setViewMode, setSelectedId, seekTo, collectionId, notes, setSelectedNote }) {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -38,6 +38,14 @@ export default function useChat({ setViewMode, setSelectedId, seekTo, collection
   };
 
   const navigateToCitation = (citation) => {
+    if (citation.source === "note") {
+      const note = (notes || []).find((n) => n.filename === citation.noteName);
+      if (note) {
+        setViewMode("notes");
+        setSelectedNote(note);
+      }
+      return;
+    }
     setViewMode("videos");
     setSelectedId(citation.videoId);
     setTimeout(() => seekTo(citation.timestamp), 300);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageSquare, Loader2, ArrowUp, FileVideo, ChevronDown, ChevronRight } from "lucide-react";
+import { MessageSquare, Loader2, ArrowUp, FileVideo, FileText, ChevronDown, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -99,8 +99,17 @@ export default function ChatPanel({
                         }}
                         title={c.text}
                       >
-                        <FileVideo size={11} />
-                        {c.videoName} [{new Date(c.timestamp * 1000).toISOString().substring(14, 19)}]
+                        {c.source === "note" ? (
+                          <>
+                            <FileText size={11} />
+                            {c.noteName.replace(/\.md$/, "")}
+                          </>
+                        ) : (
+                          <>
+                            <FileVideo size={11} />
+                            {c.videoName} [{new Date(c.timestamp * 1000).toISOString().substring(14, 19)}]
+                          </>
+                        )}
                       </button>
                     ))}
                   </div>

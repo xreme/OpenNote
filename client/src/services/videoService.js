@@ -24,3 +24,6 @@ export const uploadVideoFromUrl = (url, collectionId) =>
 
 export const retryVideo = (id) =>
   axios.post(`${API_BASE}/videos/${id}/retry`);
+
+export const downloadVideoLocally = (id) =>
+  axios.post(`${API_BASE}/videos/${id}/download`);

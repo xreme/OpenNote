@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { X, Loader2, Sparkles } from "lucide-react";
+import { X } from "lucide-react";
+import ArtifactGenerator from "../artifacts/ArtifactGenerator";
 
 export default function GenerateModal({
   show,
@@ -22,14 +23,14 @@ export default function GenerateModal({
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Generate Notes</h3>
+          <h3>Generate Artifact</h3>
           <button onClick={onClose}>
             <X size={18} />
           </button>
         </div>
         <div className="modal-body">
           <p style={{ marginBottom: "16px", color: "var(--text-dim)" }}>
-            Select transcripts to include in the summary:
+            Select transcripts to include:
           </p>
           <div className="video-selection-list">
             {videos
@@ -41,24 +42,20 @@ export default function GenerateModal({
                     checked={selectedVideosForGen.includes(v.id)}
                     onChange={() => toggleVideoSelection(v.id)}
                   />
-                  <span>{v.originalName}</span>
+                  <span title={v.originalName}>{v.originalName}</span>
                 </label>
               ))}
           </div>
         </div>
         <div className="modal-footer">
-          <button
-            onClick={() => onGenerate(selectedVideosForGen)}
-            className="save-btn"
-            disabled={!selectedVideosForGen.length || generating}
-          >
-            {generating ? (
-              <Loader2 className="spin" size={16} />
-            ) : (
-              <Sparkles size={16} />
-            )}
-            {generating ? " Generating..." : " Generate Summary"}
-          </button>
+          <ArtifactGenerator
+            generating={generating}
+            disabled={!selectedVideosForGen.length}
+            onGenerate={(artifactType, customPrompt) =>
+              onGenerate(selectedVideosForGen, artifactType, customPrompt)
+            }
+            buttonLabel="Generate"
+          />
         </div>
       </div>
     </div>

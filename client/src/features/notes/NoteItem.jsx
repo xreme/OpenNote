@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Trash2, Edit2, X, Check } from "lucide-react";
+import { ARTIFACT_BADGE } from "../../constants/artifacts";
 
 export default function NoteItem({ note, selected, onSelect, onRename, onDelete, previewMode }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -82,6 +83,11 @@ export default function NoteItem({ note, selected, onSelect, onRename, onDelete,
               {note.filename.replace(".md", "")}
             </span>
             <span className="note-date">
+              {note.type && note.type !== "notes" && (
+                <span className={`artifact-badge artifact-badge-${note.type}`} style={{ marginRight: "6px" }}>
+                  {ARTIFACT_BADGE[note.type] || note.type}
+                </span>
+              )}
               {new Date(note.createdAt).toLocaleDateString()}{" "}
               {new Date(note.createdAt).toLocaleTimeString()}
             </span>

@@ -1,5 +1,13 @@
 const fs = require("fs");
-const { listNotes, renameNote, deleteNote, getNoteFilePath, generateNotes } = require("../services/notesService");
+const {
+  listNotes,
+  renameNote,
+  deleteNote,
+  getNoteFilePath,
+  generateNotes,
+  createBlankNote,
+  saveNoteContent,
+} = require("../services/notesService");
 const { SETTINGS_FILE } = require("../config");
 
 const requireCollection = (req, res) => {
@@ -65,17 +73,51 @@ const deleteNoteHandler = (req, res) => {
 const generateNotesHandler = async (req, res) => {
   const collectionId = requireCollection(req, res);
   if (!collectionId) return;
-  const { videoIds } = req.body;
+  const { videoIds, artifactType, customPrompt } = req.body;
 
   if (!fs.existsSync(SETTINGS_FILE))
     return res.status(400).json({ error: "Settings not configured" });
 
   try {
-    const result = await generateNotes(collectionId, videoIds);
+    const result = await generateNotes(collectionId, videoIds, artifactType, customPrompt);
     res.json({ success: true, ...result });
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });
   }
 };
 
-module.exports = { getNotesHandler, renameNoteHandler, downloadNoteHandler, deleteNoteHandler, generateNotesHandler };
+const createNoteHandler = (req, res) => {
+  const collectionId = requireCollection(req, res);
+  if (!collectionId) return;
+  const { videoId } = req.body;
+  if (!videoId) return res.status(400).json({ error: "videoId is required" });
+
+  try {
+    res.json({ success: true, ...createBlankNote(collectionId, videoId) });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
+const updateNoteHandler = (req, res) => {
+  const collectionId = requireCollection(req, res);
+  if (!collectionId) return;
+  const { filename } = req.params;
+  const { content } = req.body;
+
+  try {
+    res.json({ success: true, ...saveNoteContent(collectionId, filename, content) });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
+module.exports = {
+  getNotesHandler,
+  renameNoteHandler,
+  downloadNoteHandler,
+  deleteNoteHandler,
+  generateNotesHandler,
+  createNoteHandler,
+  updateNoteHandler,
+};

@@ -1,7 +1,7 @@
 import React from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Download, X, PanelLeftOpen, FileText } from "lucide-react";
+import ArtifactContent from "../artifacts/ArtifactContent";
+import { ARTIFACT_BADGE } from "../../constants/artifacts";
 
 export default function NoteContent({
   selectedNote,
@@ -42,7 +42,14 @@ export default function NoteContent({
   return (
     <div className="markdown-preview">
       <div className="note-header">
-        <h2>{selectedNote.filename.replace(".md", "")}</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+          <h2>{selectedNote.filename.replace(".md", "")}</h2>
+          {selectedNote.type && (
+            <span className={`artifact-badge artifact-badge-${selectedNote.type}`}>
+              {ARTIFACT_BADGE[selectedNote.type] || selectedNote.type}
+            </span>
+          )}
+        </div>
         <div style={{ display: "flex", gap: "8px" }}>
           {!sidebarVisible && (
             <button
@@ -75,9 +82,11 @@ export default function NoteContent({
         </div>
       </div>
       <div className="markdown-content">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {selectedNote.content}
-        </ReactMarkdown>
+        <ArtifactContent
+          content={selectedNote.content}
+          type={selectedNote.type}
+          markdownClassName="markdown-body"
+        />
       </div>
     </div>
   );

@@ -302,4 +302,44 @@ const indexAllPending = () => {
   });
 };
 
-module.exports = { processVideo, processUrlVideo, indexVideo, indexAllPending };
+const downloadVideoLocally = async (id, url, outputPathFull, relativeOutputPath) => {
+  const rawVideoPath = path.join(UPLOADS_DIR, `${id}-raw.mp4`);
+  updateStatus(id, "downloading");
+  try {
+    await execWithRetry(
+      `"${YTDLP_BIN}" ${YTDLP_OPTS} -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[vcodec^=h264][ext=mp4]/best[vcodec^=avc][ext=mp4]/best[ext=mp4]/best" --merge-output-format mp4 --no-playlist -o "${rawVideoPath}" "${url}"`,
+    );
+
+    updateStatus(id, "compressing", { progress: 0 });
+    let encoderKey = "videotoolbox";
+    try {
+      const s = getSettings();
+      if (s.encoder && ENCODER_PRESETS[s.encoder]) encoderKey = s.encoder;
+    } catch (_) {}
+    const encoderOpts = ENCODER_PRESETS[encoderKey].options;
+
+    await new Promise((resolve, reject) => {
+      ffmpeg(rawVideoPath)
+        .outputOptions([...encoderOpts, "-acodec aac", "-b:a 128k", "-movflags +faststart"])
+        .on("progress", (p) => {
+          const percent = p.percent ? Math.round(p.percent) : 0;
+          updateStatus(id, "compressing", { progress: percent });
+        })
+        .on("end", resolve)
+        .on("error", (err) => {
+          console.error(`[${id}] FFmpeg Error:`, err);
+          reject(err);
+        })
+        .save(outputPathFull);
+    });
+
+    updateStatus(id, "completed", { outputPath: relativeOutputPath, progress: 100 });
+  } catch (e) {
+    console.error(`[${id}] Video download failed:`, e.message);
+    updateStatus(id, "completed", { error: e.message });
+  } finally {
+    try { if (fs.existsSync(rawVideoPath)) fs.unlinkSync(rawVideoPath); } catch (_) {}
+  }
+};
+
+module.exports = { processVideo, processUrlVideo, indexVideo, indexAllPending, downloadVideoLocally };
