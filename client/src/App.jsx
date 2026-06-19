@@ -259,6 +259,9 @@ function App() {
         activeCollectionId={activeCollectionId}
         onSwitchCollection={setActiveCollection}
         previewMode={previewMode}
+        notes={notes}
+        selectedNote={selectedNote}
+        setSelectedNote={setSelectedNote}
       />
       {sidebarVisible && <ResizeHandle onMouseDown={onSidebarMouseDown} active={sidebarResizing} />}
 

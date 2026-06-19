@@ -14,8 +14,22 @@ import {
   MessageSquare,
   ChevronDown,
   Eye,
+  Layers,
+  ListChecks,
+  Pencil,
 } from "lucide-react";
 import VideoItem from "./VideoItem";
+import { ARTIFACT_BADGE } from "../../constants/artifacts";
+
+// Icon shown next to each artifact in the sidebar, keyed by artifact type.
+const TYPE_ICON = {
+  summary: Sparkles,
+  notes: FileText,
+  note: Pencil,
+  flashcards: Layers,
+  quizzes: ListChecks,
+  custom: Sparkles,
+};
 
 export default function Sidebar({
   width,
@@ -48,7 +62,18 @@ export default function Sidebar({
   activeCollectionId,
   onSwitchCollection,
   previewMode,
+  notes = [],
+  selectedNote,
+  setSelectedNote,
 }) {
+  const openArtifact = (note) => {
+    setSelectedNote(note);
+    setViewMode("notes");
+  };
+
+  const isArtifactActive = (note) =>
+    viewMode === "notes" && selectedNote?.filename === note.filename;
+
   return (
     <div
       className={`sidebar ${!sidebarVisible ? "hidden" : ""}`}
@@ -108,57 +133,98 @@ export default function Sidebar({
         </div>
       </div>
 
-      <div className="video-list">
-        {!videos.length && !uploading && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "40px 0",
-              color: "var(--text-dim)",
-            }}
-          >
-            <Upload style={{ opacity: 0.2, marginBottom: "8px" }} size={32} />
-            <p style={{ fontSize: "14px" }}>No videos yet</p>
+      <div className="sidebar-lists">
+        <div className="sidebar-section sidebar-sources">
+          <div className="sidebar-section-header">
+            <span><FileVideo size={12} /> Sources</span>
+            <span className="sidebar-section-count">{videos.length}</span>
           </div>
-        )}
+          <div className="video-list">
+            {!videos.length && !uploading && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "40px 0",
+                  color: "var(--text-dim)",
+                }}
+              >
+                <Upload style={{ opacity: 0.2, marginBottom: "8px" }} size={32} />
+                <p style={{ fontSize: "14px" }}>No videos yet</p>
+              </div>
+            )}
 
-        {uploading && (
-          <div
-            className="video-item"
-            style={{ animation: "pulse 2s infinite" }}
-          >
-            <div className="video-info-wrapper">
-              <Loader2
-                size={16}
-                className="spin"
-                style={{ color: "var(--primary)" }}
-              />
-              <span style={{ fontSize: "14px", color: "var(--text-dim)" }}>
-                Uploading...
-              </span>
-            </div>
+            {uploading && (
+              <div
+                className="video-item"
+                style={{ animation: "pulse 2s infinite" }}
+              >
+                <div className="video-info-wrapper">
+                  <Loader2
+                    size={16}
+                    className="spin"
+                    style={{ color: "var(--primary)" }}
+                  />
+                  <span style={{ fontSize: "14px", color: "var(--text-dim)" }}>
+                    Uploading...
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {filteredVideos.map((video) => {
+              const indexInAll = videos.indexOf(video);
+              return (
+                <VideoItem
+                  key={video.id}
+                  video={video}
+                  selected={selectedId === video.id}
+                  onSelect={setSelectedId}
+                  onDelete={deleteVideo}
+                  onRename={saveRename}
+                  onOpenFolder={openFolder}
+                  onMoveUp={() => moveVideo(indexInAll, -1)}
+                  onMoveDown={() => moveVideo(indexInAll, 1)}
+                  isFirst={indexInAll === 0}
+                  isLast={indexInAll === videos.length - 1}
+                  previewMode={previewMode}
+                />
+              );
+            })}
           </div>
-        )}
+        </div>
 
-        {filteredVideos.map((video) => {
-          const indexInAll = videos.indexOf(video);
-          return (
-            <VideoItem
-              key={video.id}
-              video={video}
-              selected={selectedId === video.id}
-              onSelect={setSelectedId}
-              onDelete={deleteVideo}
-              onRename={saveRename}
-              onOpenFolder={openFolder}
-              onMoveUp={() => moveVideo(indexInAll, -1)}
-              onMoveDown={() => moveVideo(indexInAll, 1)}
-              isFirst={indexInAll === 0}
-              isLast={indexInAll === videos.length - 1}
-              previewMode={previewMode}
-            />
-          );
-        })}
+        <div className="sidebar-section sidebar-artifacts">
+          <div className="sidebar-section-header">
+            <span><Sparkles size={12} /> Artifacts</span>
+            <span className="sidebar-section-count">{notes.length}</span>
+          </div>
+          <div className="artifact-list">
+            {notes.length === 0 ? (
+              <p className="sidebar-empty-hint">No artifacts yet</p>
+            ) : (
+              notes.map((note) => {
+                const Icon = TYPE_ICON[note.type] || Sparkles;
+                const name = note.filename.replace(/\.md$/, "");
+                return (
+                  <button
+                    key={note.filename}
+                    className={`artifact-item ${isArtifactActive(note) ? "active" : ""}`}
+                    onClick={() => openArtifact(note)}
+                    title={name}
+                  >
+                    <Icon size={13} className="artifact-item-icon" />
+                    <span className="artifact-item-name">{name}</span>
+                    {note.type && note.type !== "notes" && (
+                      <span className={`artifact-badge artifact-badge-${note.type}`}>
+                        {ARTIFACT_BADGE[note.type] || note.type}
+                      </span>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
       </div>
 
       <div
