@@ -1,9 +1,0 @@
-node_modules
-client/node_modules
-server/node_modules
-data
-.git
-.claude
-*.md
-images
-memory
