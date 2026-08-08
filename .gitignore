@@ -53,6 +53,10 @@ __pycache__/
 *.sln
 *.sw?
 
-# server stuff
-collections/
-notes/
+# Server state. These must stay anchored: bare `collections/` and `notes/`
+# also match client/src/features/notes and would hide source files.
+/server/collections/
+/data/notes/
+
+# Local scratch: contains .env, uploads and personal notes
+_legacy/
