@@ -1,5 +1,6 @@
 const {
   getVideoStatus,
+  setVideoOrder,
   saveCollection,
   findVideoById,
 } = require("../repositories/videoRepository");
@@ -22,15 +23,12 @@ const listVideos = (req, res) => {
 const reorderVideos = (req, res) => {
   const { order, collectionId } = req.body;
   if (!collectionId) return res.status(400).json({ error: "collectionId is required" });
+  if (!Array.isArray(order)) return res.status(400).send("Invalid order format");
 
-  const videoStatus = getVideoStatus(collectionId);
-  if (Array.isArray(order)) {
-    videoStatus.order = order;
-    saveCollection(collectionId);
-    res.json({ success: true });
-  } else {
-    res.status(400).send("Invalid order format");
+  if (!setVideoOrder(collectionId, order)) {
+    return res.status(404).json({ error: "Collection not found" });
   }
+  res.json({ success: true });
 };
 
 const renameVideo = (req, res) => {
