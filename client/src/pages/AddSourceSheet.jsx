@@ -69,7 +69,7 @@ export default function AddSourceSheet({ collectionId, onClose, onSuccess }) {
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.45)',
         display: 'flex', alignItems: 'flex-end',
-        fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+        fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
       }}
     >
       <div
@@ -231,7 +231,7 @@ const label = {
 const input = {
   width: '100%', padding: '14px',
   fontSize: '16px',
-  fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+  fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
   border: 'var(--border-width) solid var(--card-border)',
   borderRadius: 'var(--radius)',
   background: 'var(--card-bg)',
@@ -242,7 +242,7 @@ const input = {
 const btn = {
   width: '100%', padding: '14px',
   fontSize: '14px',
-  fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+  fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
   fontWeight: 700,
   background: 'var(--primary)',
   color: '#1a1a18',

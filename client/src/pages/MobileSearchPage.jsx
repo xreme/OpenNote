@@ -77,7 +77,7 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
       position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
       background: 'var(--bg-color)', color: 'var(--text-main)',
-      fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+      fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
     }}>
       <header style={{
         flexShrink: 0,
@@ -291,7 +291,7 @@ export default function MobileSearchPage() {
       position: 'fixed', inset: 0,
       display: 'flex', flexDirection: 'column',
       background: 'var(--bg-color)', color: 'var(--text-main)',
-      fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+      fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
     }}>
 
       {/* Header */}

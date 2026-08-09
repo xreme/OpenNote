@@ -83,7 +83,7 @@ export default function MobileChatPage() {
       flexDirection: 'column',
       background: 'var(--bg-color)',
       color: 'var(--text-main)',
-      fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+      fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
     }}>
 
       {/* Header */}
