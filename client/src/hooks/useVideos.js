@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getVideos,
   uploadVideos,
@@ -15,11 +15,15 @@ export default function useVideos(collectionId) {
   const [videos, setVideos] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [uploading, setUploading] = useState(false);
+  // A reorder is optimistic; ignore poll results until the server has our order,
+  // otherwise the 3s refresh snaps the list back to the pre-drag positions.
+  const reorderPending = useRef(false);
 
   const fetchVideos = useCallback(async () => {
     if (!collectionId) return;
     try {
       const resp = await getVideos(collectionId);
+      if (reorderPending.current) return;
       setVideos(resp.data);
     } catch (err) {
       console.error("Failed to fetch videos", err);
@@ -79,20 +83,31 @@ export default function useVideos(collectionId) {
     }
   };
 
-  const moveVideo = async (index, direction) => {
-    const newVideos = [...videos];
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= newVideos.length) return;
-
-    [newVideos[index], newVideos[targetIndex]] = [newVideos[targetIndex], newVideos[index]];
-    setVideos(newVideos);
-
+  const persistOrder = async (ordered) => {
+    setVideos(ordered);
+    reorderPending.current = true;
     try {
-      await reorderVideos(newVideos.map((v) => v.id), collectionId);
+      await reorderVideos(ordered.map((v) => v.id), collectionId);
     } catch (err) {
       console.error("Failed to save order", err);
+      reorderPending.current = false;
       fetchVideos();
+      return;
     }
+    reorderPending.current = false;
+  };
+
+  // Drop the dragged source into the slot the pointer is over, shifting the rest.
+  const reorderVideo = async (dragId, dropId) => {
+    if (!dragId || dragId === dropId) return;
+    const ordered = [...videos];
+    const from = ordered.findIndex((v) => v.id === dragId);
+    const to = ordered.findIndex((v) => v.id === dropId);
+    if (from < 0 || to < 0) return;
+
+    const [moved] = ordered.splice(from, 1);
+    ordered.splice(to, 0, moved);
+    await persistOrder(ordered);
   };
 
   const saveRename = async (id, newName) => {
@@ -121,7 +136,7 @@ export default function useVideos(collectionId) {
     handleUpload,
     handleUrlUpload,
     deleteVideo,
-    moveVideo,
+    reorderVideo,
     saveRename,
     openFolder,
     fetchVideos,
