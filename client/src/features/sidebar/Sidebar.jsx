@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import {
   Upload,
-  FileVideo,
   Loader2,
   Download,
   Search,
@@ -9,27 +8,17 @@ import {
   PanelLeftClose,
   Settings,
   Github,
-  FileText,
   Sparkles,
   MessageSquare,
-  ChevronDown,
+  ChevronsUpDown,
+  Check,
   Eye,
-  Layers,
-  ListChecks,
-  Pencil,
+  Library,
+  NotebookPen,
 } from "lucide-react";
 import VideoItem from "./VideoItem";
-import { ARTIFACT_BADGE } from "../../constants/artifacts";
-
-// Icon shown next to each artifact in the sidebar, keyed by artifact type.
-const TYPE_ICON = {
-  summary: Sparkles,
-  notes: FileText,
-  note: Pencil,
-  flashcards: Layers,
-  quizzes: ListChecks,
-  custom: Sparkles,
-};
+import NoteRow from "./NoteRow";
+import { groupNotesByType } from "../../constants/artifacts";
 
 export default function Sidebar({
   width,
@@ -40,19 +29,17 @@ export default function Sidebar({
   search,
   setSearch,
   selectedId,
-  setSelectedId,
+  onSelectVideo,
   sidebarVisible,
   setSidebarVisible,
   viewMode,
-  setViewMode,
   showChatPanel,
   setShowChatPanel,
   handleUpload,
   deleteVideo,
-  moveVideo,
+  reorderVideo,
   saveRename,
   openFolder,
-  fetchNotes,
   setShowGenerateModal,
   setShowExportModal,
   setShowSearch,
@@ -61,18 +48,80 @@ export default function Sidebar({
   collections,
   activeCollectionId,
   onSwitchCollection,
+  onCreateCollection,
   previewMode,
   notes = [],
   selectedNote,
-  setSelectedNote,
+  onSelectNote,
+  onRenameNote,
+  onDeleteNote,
 }) {
-  const openArtifact = (note) => {
-    setSelectedNote(note);
-    setViewMode("notes");
-  };
+  // The dragged id lives in a ref as well as state: state drives the ghosting,
+  // but the drop handler must read the id synchronously, since a re-render is
+  // not guaranteed between dragstart and drop.
+  const dragIdRef = useRef(null);
+  const [dragId, setDragId] = useState(null);
+  const [overId, setOverId] = useState(null);
+  const [newCollection, setNewCollection] = useState(null);
 
   const isArtifactActive = (note) =>
     viewMode === "notes" && selectedNote?.filename === note.filename;
+
+  // The search box covers both lists, so filter notes by the same query.
+  const query = search.trim().toLowerCase();
+  const visibleNotes = query
+    ? notes.filter((n) => n.filename.toLowerCase().includes(query))
+    : notes;
+
+  // Artifacts are listed under the kind of thing they are.
+  const artifactGroups = groupNotesByType(visibleNotes);
+
+  // Reordering is positional, so it only makes sense against the full list.
+  const canReorder = !query && !previewMode;
+
+  const handleDragStart = (id) => (e) => {
+    dragIdRef.current = id;
+    setDragId(id);
+    try {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", id);
+    } catch { /* Safari rejects some dataTransfer writes; the drag still works */ }
+  };
+
+  const handleDragOver = (id) => (e) => {
+    e.preventDefault();
+    try { e.dataTransfer.dropEffect = "move"; } catch { /* see above */ }
+    setOverId((prev) => (prev === id ? prev : id));
+  };
+
+  const handleDrop = (id) => (e) => {
+    e.preventDefault();
+    let dragged = dragIdRef.current;
+    if (!dragged) {
+      try { dragged = e.dataTransfer.getData("text/plain"); } catch { /* see above */ }
+    }
+    if (dragged && dragged !== id) reorderVideo(dragged, id);
+    dragIdRef.current = null;
+    setDragId(null);
+    setOverId(null);
+  };
+
+  const handleDragEnd = () => {
+    dragIdRef.current = null;
+    setDragId(null);
+    setOverId(null);
+  };
+
+  const submitNewCollection = async () => {
+    const title = (newCollection || "").trim();
+    if (!title) return setNewCollection(null);
+    await onCreateCollection(title);
+    setNewCollection(null);
+  };
+
+  const disabledInPreview = previewMode
+    ? { opacity: 0.4, cursor: "not-allowed", pointerEvents: "auto" }
+    : undefined;
 
   return (
     <div
@@ -80,52 +129,43 @@ export default function Sidebar({
       style={{ width, transition: isResizing ? "none" : undefined }}
     >
       <div className="sidebar-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <button
-            onClick={() => setSidebarVisible(false)}
-            className="icon-btn-toggle"
-            title="Hide Sidebar"
-          >
-            <PanelLeftClose size={20} />
-          </button>
-          <h1 className="logo">OpenNote</h1>
-          {previewMode && (
-            <span style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              padding: "2px 8px",
-              borderRadius: "20px",
-              fontSize: "9px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--primary)",
-              background: "rgba(200,170,110,0.15)",
-              border: "1px solid rgba(200,170,110,0.3)",
-              whiteSpace: "nowrap",
-            }}>
-              <Eye size={10} /> Preview
-            </span>
-          )}
+        <div className="brand-mark">
+          <NotebookPen size={18} />
         </div>
+        <h1 className="logo">OpenNote</h1>
+        {previewMode && (
+          <span className="preview-chip">
+            <Eye size={10} /> Preview
+          </span>
+        )}
         <button
-          className="upload-btn-round"
-          onClick={() => !previewMode && setShowAddModal(true)}
-          title={previewMode ? "Not available in preview mode" : "Add Content"}
-          disabled={previewMode}
-          style={previewMode ? { opacity: 0.4, cursor: "not-allowed", pointerEvents: "auto" } : undefined}
+          onClick={() => setSidebarVisible(false)}
+          className="icon-btn-toggle"
+          title="Collapse"
+          style={{ marginLeft: "auto" }}
         >
-          <Plus size={20} />
+          <PanelLeftClose size={17} />
+        </button>
+      </div>
+
+      <div style={{ padding: "0 14px 12px" }}>
+        <button
+          className="sidebar-add-btn"
+          onClick={() => !previewMode && setShowAddModal(true)}
+          title={previewMode ? "Not available in preview mode" : "Add content"}
+          disabled={previewMode}
+          style={disabledInPreview}
+        >
+          <Plus size={17} /> Add content
         </button>
       </div>
 
       <div className="search-container">
         <div className="search-wrapper">
-          <Search size={16} className="search-icon" />
+          <Search size={15} className="search-icon" />
           <input
             type="text"
-            placeholder="Search videos..."
+            placeholder="Search content…"
             className="search-input"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -136,203 +176,184 @@ export default function Sidebar({
       <div className="sidebar-lists">
         <div className="sidebar-section sidebar-sources">
           <div className="sidebar-section-header">
-            <span><FileVideo size={12} /> Sources</span>
+            <span>Sources</span>
             <span className="sidebar-section-count">{videos.length}</span>
           </div>
           <div className="video-list">
             {!videos.length && !uploading && (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "40px 0",
-                  color: "var(--text-dim)",
-                }}
-              >
-                <Upload style={{ opacity: 0.2, marginBottom: "8px" }} size={32} />
-                <p style={{ fontSize: "14px" }}>No videos yet</p>
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-faint)" }}>
+                <Upload style={{ opacity: 0.35, marginBottom: "10px" }} size={28} />
+                <p style={{ fontSize: "13px", margin: 0 }}>No videos yet</p>
               </div>
             )}
 
             {uploading && (
-              <div
-                className="video-item"
-                style={{ animation: "pulse 2s infinite" }}
-              >
-                <div className="video-info-wrapper">
-                  <Loader2
-                    size={16}
-                    className="spin"
-                    style={{ color: "var(--primary)" }}
-                  />
-                  <span style={{ fontSize: "14px", color: "var(--text-dim)" }}>
-                    Uploading...
-                  </span>
+              <div className="video-item" style={{ animation: "pulse 2s infinite" }}>
+                <div className="video-icon-box">
+                  <Loader2 size={15} className="spin" style={{ color: "var(--primary)" }} />
                 </div>
+                <span style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--text-dim)" }}>
+                  Uploading…
+                </span>
               </div>
             )}
 
-            {filteredVideos.map((video) => {
-              const indexInAll = videos.indexOf(video);
-              return (
-                <VideoItem
-                  key={video.id}
-                  video={video}
-                  selected={selectedId === video.id}
-                  onSelect={setSelectedId}
-                  onDelete={deleteVideo}
-                  onRename={saveRename}
-                  onOpenFolder={openFolder}
-                  onMoveUp={() => moveVideo(indexInAll, -1)}
-                  onMoveDown={() => moveVideo(indexInAll, 1)}
-                  isFirst={indexInAll === 0}
-                  isLast={indexInAll === videos.length - 1}
-                  previewMode={previewMode}
-                />
-              );
-            })}
+            {filteredVideos.map((video) => (
+              <VideoItem
+                key={video.id}
+                video={video}
+                selected={viewMode === "videos" && selectedId === video.id}
+                onSelect={onSelectVideo}
+                onDelete={deleteVideo}
+                onRename={saveRename}
+                onOpenFolder={openFolder}
+                draggable={canReorder}
+                dragging={dragId === video.id}
+                dropTarget={overId === video.id && !!dragId && dragId !== video.id}
+                onDragStart={handleDragStart(video.id)}
+                onDragOver={handleDragOver(video.id)}
+                onDrop={handleDrop(video.id)}
+                onDragEnd={handleDragEnd}
+                previewMode={previewMode}
+              />
+            ))}
           </div>
         </div>
 
         <div className="sidebar-section sidebar-artifacts">
           <div className="sidebar-section-header">
-            <span><Sparkles size={12} /> Artifacts</span>
-            <span className="sidebar-section-count">{notes.length}</span>
+            <span>Artifacts</span>
+            <span className="sidebar-section-count">{visibleNotes.length}</span>
           </div>
           <div className="artifact-list">
-            {notes.length === 0 ? (
-              <p className="sidebar-empty-hint">No artifacts yet</p>
+            {visibleNotes.length === 0 ? (
+              <p className="sidebar-empty-hint">
+                {query ? "No matching artifacts" : "No artifacts yet"}
+              </p>
             ) : (
-              notes.map((note) => {
-                const Icon = TYPE_ICON[note.type] || Sparkles;
-                const name = note.filename.replace(/\.md$/, "");
-                return (
-                  <button
-                    key={note.filename}
-                    className={`artifact-item ${isArtifactActive(note) ? "active" : ""}`}
-                    onClick={() => openArtifact(note)}
-                    title={name}
-                  >
-                    <Icon size={13} className="artifact-item-icon" />
-                    <span className="artifact-item-name">{name}</span>
-                    {note.type && note.type !== "notes" && (
-                      <span className={`artifact-badge artifact-badge-${note.type}`}>
-                        {ARTIFACT_BADGE[note.type] || note.type}
-                      </span>
-                    )}
-                  </button>
-                );
-              })
+              artifactGroups.map((group) => (
+                <div className="artifact-group" key={group.type}>
+                  <div className="artifact-group-header">
+                    <span>{group.label}</span>
+                    <span className="artifact-group-count">{group.notes.length}</span>
+                  </div>
+                  {group.notes.map((note) => (
+                    <NoteRow
+                      key={note.filename}
+                      note={note}
+                      active={isArtifactActive(note)}
+                      onSelect={onSelectNote}
+                      onRename={onRenameNote}
+                      onDelete={onDeleteNote}
+                      previewMode={previewMode}
+                    />
+                  ))}
+                </div>
+              ))
             )}
           </div>
         </div>
       </div>
 
-      <div
-        className="sidebar-actions"
-        style={{
-          padding: "0 16px",
-          marginBottom: "16px",
-          display: "flex",
-          gap: "8px",
-        }}
-      >
+      <div className="sidebar-actions">
         <button
           className="action-btn-primary"
           onClick={() => !previewMode && setShowGenerateModal(true)}
-          title={previewMode ? "Not available in preview mode" : "Generate AI Artifact"}
+          title={previewMode ? "Not available in preview mode" : "Generate AI artifact"}
           disabled={previewMode}
-          style={previewMode ? { opacity: 0.4, cursor: "not-allowed", pointerEvents: "auto" } : undefined}
+          style={disabledInPreview}
         >
-          <Sparkles size={16} /> Generate Artifact
+          <Sparkles size={15} /> Generate
         </button>
         <button
           className="action-btn-secondary"
           onClick={() => setShowExportModal(true)}
-          title="Bulk Export Transcripts"
-          style={{ padding: "0 12px" }}
+          title="Bulk export transcripts"
         >
           <Download size={16} />
         </button>
         <button
           className={`action-btn-secondary ${showChatPanel ? "active" : ""}`}
           onClick={() => setShowChatPanel((prev) => !prev)}
-          title="Chat with Transcripts"
+          title="Chat with transcripts"
         >
           <MessageSquare size={16} />
         </button>
-        <button
-          className={`action-btn-secondary ${viewMode === "notes" ? "active" : ""}`}
-          onClick={() => {
-            if (viewMode === "notes") {
-              setViewMode("videos");
-            } else {
-              setViewMode("notes");
-              fetchNotes();
-            }
-          }}
-          title={viewMode === "notes" ? "Back to Videos" : "View Notes"}
-        >
-          {viewMode === "notes" ? (
-            <FileVideo size={16} />
-          ) : (
-            <FileText size={16} />
-          )}
-        </button>
       </div>
 
-      <div
-        className="sidebar-footer"
-        style={{
-          marginTop: "auto",
-          padding: "16px",
-          borderTop: "1px solid var(--card-border)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        }}
-      >
-        {collections && collections.length > 0 && (
+      <div className="sidebar-footer">
+        {newCollection !== null ? (
           <div className="collection-switcher">
-            <select
-              className="collection-select"
-              value={activeCollectionId || ""}
-              onChange={(e) => onSwitchCollection(e.target.value)}
-            >
-              {collections.map((col) => (
-                <option key={col.id} value={col.id}>
-                  {col.title}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="collection-select-icon" />
+            <Library size={14} className="collection-select-lead" />
+            <input
+              autoFocus
+              className="collection-new-input"
+              placeholder="New collection name…"
+              value={newCollection}
+              onChange={(e) => setNewCollection(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submitNewCollection();
+                if (e.key === "Escape") setNewCollection(null);
+              }}
+              onBlur={() => !newCollection.trim() && setNewCollection(null)}
+            />
           </div>
+        ) : (
+          collections && collections.length > 0 && (
+            <div className="collection-switcher">
+              <Library size={14} className="collection-select-lead" />
+              <select
+                className="collection-select"
+                value={activeCollectionId || ""}
+                onChange={(e) => onSwitchCollection(e.target.value)}
+              >
+                {collections.map((col) => (
+                  <option key={col.id} value={col.id}>
+                    {col.title}
+                  </option>
+                ))}
+              </select>
+              <ChevronsUpDown size={13} className="collection-select-icon" />
+            </div>
+          )
         )}
-        <div style={{ display: "flex", gap: "8px" }}>
+
+        {newCollection !== null ? (
           <button
-            onClick={() => setShowSearch(true)}
-            className="settings-btn"
-            style={{ justifyContent: "center", flex: 1 }}
+            onClick={submitNewCollection}
+            className="settings-btn confirm"
+            title="Create collection"
+            disabled={!newCollection.trim()}
           >
-            <Search size={16} /> Search
+            <Check size={15} />
           </button>
-          <a
-            href="https://github.com/xreme/OpenNote"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="settings-btn"
-            style={{ width: "auto", padding: "8px", textDecoration: "none" }}
-            title="GitHub"
-          >
-            <Github size={16} />
-          </a>
+        ) : (
           <button
-            onClick={() => setShowSettings(true)}
+            onClick={() => !previewMode && setNewCollection("")}
             className="settings-btn"
-            style={{ width: "auto", padding: "8px" }}
+            title={previewMode ? "Not available in preview mode" : "New collection"}
+            disabled={previewMode}
+            style={disabledInPreview}
           >
-            <Settings size={16} />
+            <Plus size={15} />
           </button>
-        </div>
+        )}
+
+        <button onClick={() => setShowSearch(true)} className="settings-btn" title="Search everything">
+          <Search size={15} />
+        </button>
+        <a
+          href="https://github.com/xreme/OpenNote"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="settings-btn"
+          title="GitHub"
+        >
+          <Github size={15} />
+        </a>
+        <button onClick={() => setShowSettings(true)} className="settings-btn" title="Settings">
+          <Settings size={15} />
+        </button>
       </div>
     </div>
   );
