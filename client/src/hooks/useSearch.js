@@ -4,10 +4,9 @@ import Fuse from "fuse.js";
 export default function useSearch({
   videos,
   notes,
-  setViewMode,
-  setSelectedId,
+  selectVideo,
   seekTo,
-  setSelectedNote,
+  selectNote,
 }) {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,14 +68,12 @@ export default function useSearch({
   const navigateToSearchResult = (type, item) => {
     setShowSearch(false);
     if (type === "video") {
-      setViewMode("videos");
-      setSelectedId(item.videoId);
+      selectVideo(item.videoId);
       setTimeout(() => {
         seekTo(item.start);
       }, 300);
     } else {
-      setViewMode("notes");
-      setSelectedNote(item);
+      selectNote(item);
     }
   };
 

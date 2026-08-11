@@ -5,8 +5,6 @@ import { ARTIFACT_BADGE } from "../../constants/artifacts";
 
 export default function NoteContent({
   selectedNote,
-  notesSidebarVisible,
-  setNotesSidebarVisible,
   sidebarVisible,
   setSidebarVisible,
   onDownload,
@@ -15,26 +13,23 @@ export default function NoteContent({
   if (!selectedNote) {
     return (
       <div className="empty-state">
-        {!notesSidebarVisible && (
+        {!sidebarVisible && (
           <div style={{ position: "absolute", top: 16, left: 16 }}>
             <button
-              onClick={() => setNotesSidebarVisible(true)}
-              className="icon-btn-toggle"
-              title="Show Notes List"
+              onClick={() => setSidebarVisible(true)}
+              className="header-icon-btn"
+              title="Show sidebar"
             >
-              <PanelLeftOpen size={20} />
+              <PanelLeftOpen size={16} />
             </button>
           </div>
         )}
-        <FileText
-          size={48}
-          style={{
-            color: "var(--text-dim)",
-            opacity: 0.5,
-            marginBottom: "16px",
-          }}
-        />
-        <p>Select a note to view</p>
+        <div className="empty-icon-box">
+          <FileText size={28} />
+        </div>
+        <h2 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-soft)", margin: 0 }}>
+          Select a note to view
+        </h2>
       </div>
     );
   }
@@ -56,15 +51,6 @@ export default function NoteContent({
               onClick={() => setSidebarVisible(true)}
               className="icon-btn-toggle"
               title="Show Sidebar"
-            >
-              <PanelLeftOpen size={18} />
-            </button>
-          )}
-          {!notesSidebarVisible && (
-            <button
-              onClick={() => setNotesSidebarVisible(true)}
-              className="icon-btn-toggle"
-              title="Show Notes List"
             >
               <PanelLeftOpen size={18} />
             </button>
