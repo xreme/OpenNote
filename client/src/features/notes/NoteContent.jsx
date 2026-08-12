@@ -1,10 +1,13 @@
 import React from "react";
 import { Download, X, PanelLeftOpen, FileText } from "lucide-react";
 import ArtifactContent from "../artifacts/ArtifactContent";
+import SourceLinks from "./SourceLinks";
 import { ARTIFACT_BADGE } from "../../constants/artifacts";
 
 export default function NoteContent({
   selectedNote,
+  videos,
+  onSelectVideo,
   sidebarVisible,
   setSidebarVisible,
   onDownload,
@@ -37,13 +40,20 @@ export default function NoteContent({
   return (
     <div className="markdown-preview">
       <div className="note-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-          <h2>{selectedNote.filename.replace(".md", "")}</h2>
-          {selectedNote.type && (
-            <span className={`artifact-badge artifact-badge-${selectedNote.type}`}>
-              {ARTIFACT_BADGE[selectedNote.type] || selectedNote.type}
-            </span>
-          )}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+            <h2>{selectedNote.filename.replace(".md", "")}</h2>
+            {selectedNote.type && (
+              <span className={`artifact-badge artifact-badge-${selectedNote.type}`}>
+                {ARTIFACT_BADGE[selectedNote.type] || selectedNote.type}
+              </span>
+            )}
+          </div>
+          <SourceLinks
+            note={selectedNote}
+            videos={videos}
+            onSelectVideo={onSelectVideo}
+          />
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           {!sidebarVisible && (
