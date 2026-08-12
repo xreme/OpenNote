@@ -1,12 +1,27 @@
 import { useState } from "react";
-import { MessageSquare, Loader2, ArrowUp, FileVideo, FileText, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  MessagesSquare,
+  Sparkles,
+  Loader2,
+  ArrowLeft,
+  ArrowUp,
+  ArrowUpRight,
+  Link as LinkIcon,
+  Play,
+  FileText,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+const formatTimestamp = (seconds) =>
+  new Date(seconds * 1000).toISOString().substring(14, 19);
+
 export default function ChatPanel({
   width,
+  snapped,
   isResizing,
   showChatPanel,
+  setShowChatPanel,
   chatMessages,
   chatInput,
   setChatInput,
@@ -21,121 +36,93 @@ export default function ChatPanel({
 
   return (
     <div
-      className={`chat-panel ${!showChatPanel ? "hidden" : ""}`}
+      className={`chat-panel ${!showChatPanel ? "hidden" : ""} ${snapped ? "snapped" : ""}`}
       style={{ width, transition: isResizing ? "none" : undefined }}
     >
       <div className="chat-panel-header">
-        <h3 style={{ margin: 0, fontSize: "15px", display: "flex", alignItems: "center", gap: "8px" }}>
-          <MessageSquare size={16} /> Chat
-        </h3>
+        <button
+          className={`chat-hide-btn ${snapped ? "as-back" : ""}`}
+          onClick={() => setShowChatPanel?.((prev) => !prev)}
+          title={snapped ? "Back to content" : "Hide chat"}
+        >
+          {snapped ? <ArrowLeft size={17} /> : <MessagesSquare size={16} />}
+        </button>
+        <h3 className="chat-panel-title">Chat</h3>
+        <span className="chat-panel-scope">RAG · this collection</span>
       </div>
 
       {/* Messages area */}
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", padding: "16px" }}>
+      <div className="chat-messages">
         {chatMessages.length === 0 && (
-          <div style={{ color: "var(--text-dim)", textAlign: "center", marginTop: "60px", fontSize: "13px" }}>
-            <MessageSquare size={28} style={{ opacity: 0.3, marginBottom: "10px" }} />
+          <div className="chat-empty">
+            <Sparkles size={30} />
             <p>Ask a question about your video transcripts.</p>
           </div>
         )}
-        {chatMessages.map((msg, i) => (
-          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start", gap: "6px" }}>
-            <div style={{
-              maxWidth: "90%",
-              padding: "10px 14px",
-              borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-              backgroundColor: msg.role === "user" ? "var(--primary)" : "var(--card-bg)",
-              border: msg.role === "assistant" ? "1px solid var(--card-border)" : "none",
-              fontSize: "13px",
-              lineHeight: "1.6",
-            }}>
-              {msg.role === "assistant" ? (
+
+        {chatMessages.map((msg, i) =>
+          msg.role === "user" ? (
+            <div key={i} className="chat-bubble-user">
+              {msg.text}
+            </div>
+          ) : (
+            <div key={i} className="chat-assistant">
+              <div className="chat-bubble-assistant">
                 <div className="chat-markdown">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                 </div>
-              ) : (
-                msg.text
-              )}
-            </div>
-            {msg.citations && msg.citations.length > 0 && (
-              <div style={{ maxWidth: "90%" }}>
-                <button
-                  onClick={() => toggleSources(i)}
-                  style={{
-                    background: "none",
-                    border: "1px solid var(--card-border)",
-                    borderRadius: "6px",
-                    padding: "3px 8px",
-                    fontSize: "11px",
-                    color: "var(--text-dim)",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  {expandedSources[i] ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-                  {msg.citations.length} source{msg.citations.length !== 1 ? "s" : ""}
-                </button>
-                {expandedSources[i] && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "6px" }}>
-                    {msg.citations.map((c, ci) => (
-                      <button
-                        key={ci}
-                        onClick={() => navigateToCitation(c)}
-                        style={{
-                          background: "none",
-                          border: "1px solid var(--card-border)",
-                          borderRadius: "6px",
-                          padding: "3px 8px",
-                          fontSize: "11px",
-                          color: "var(--text-dim)",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          fontFamily: "inherit",
-                        }}
-                        title={c.text}
-                      >
-                        {c.source === "note" ? (
-                          <>
-                            <FileText size={11} />
-                            {c.noteName.replace(/\.md$/, "")}
-                          </>
-                        ) : (
-                          <>
-                            <FileVideo size={11} />
-                            {c.videoName} [{new Date(c.timestamp * 1000).toISOString().substring(14, 19)}]
-                          </>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+
+                {msg.citations && msg.citations.length > 0 && (
+                  <>
+                    <button className="chat-sources-toggle" onClick={() => toggleSources(i)}>
+                      <LinkIcon size={13} />
+                      {msg.citations.length} source{msg.citations.length !== 1 ? "s" : ""}
+                    </button>
+
+                    {expandedSources[i] && (
+                      <div className="chat-source-list">
+                        {msg.citations.map((c, ci) => (
+                          <button
+                            key={ci}
+                            className="chat-source-card"
+                            onClick={() => navigateToCitation(c)}
+                            title={c.text}
+                          >
+                            <span className="chat-source-icon">
+                              {c.source === "note" ? <FileText size={13} /> : <Play size={13} />}
+                            </span>
+                            <span className="chat-source-body">
+                              <span className="chat-source-label">
+                                {c.source === "note"
+                                  ? c.noteName.replace(/\.md$/, "")
+                                  : c.videoName.replace(/\.[^.]+$/, "")}
+                              </span>
+                              {c.source !== "note" && (
+                                <span className="chat-source-ts">{formatTimestamp(c.timestamp)}</span>
+                              )}
+                            </span>
+                            <ArrowUpRight size={13} className="chat-source-arrow" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          ),
+        )}
+
         {chatLoading && (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-dim)", fontSize: "13px" }}>
-            <Loader2 size={14} className="spin" /> Thinking...
+          <div className="chat-thinking">
+            <Loader2 size={15} className="spin" /> Thinking…
           </div>
         )}
       </div>
 
       {/* Input area */}
-      <div style={{ padding: "12px" }}>
-        <div style={{
-          display: "flex",
-          alignItems: "flex-end",
-          border: "1px solid var(--card-border)",
-          borderRadius: "14px",
-          background: "var(--card-bg)",
-          padding: "8px 8px 8px 14px",
-          gap: "8px",
-        }}>
+      <div className="chat-input-dock">
+        <div className="chat-input-shell">
           <textarea
             value={chatInput}
             onChange={(e) => {
@@ -143,44 +130,22 @@ export default function ChatPanel({
               e.target.style.height = "auto";
               e.target.style.height = e.target.scrollHeight + "px";
             }}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
-            placeholder="Ask something about your videos..."
-            rows={1}
-            style={{
-              flex: 1,
-              border: "none",
-              background: "transparent",
-              color: "var(--text-main)",
-              fontSize: "13px",
-              resize: "none",
-              fontFamily: "inherit",
-              outline: "none",
-              lineHeight: "1.5",
-              maxHeight: "120px",
-              overflowY: "auto",
-              padding: "2px 0",
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+              }
             }}
+            placeholder="Ask anything…"
+            rows={1}
           />
           <button
+            className="chat-send-btn"
             onClick={sendChatMessage}
             disabled={!chatInput.trim() || chatLoading}
-            style={{
-              flexShrink: 0,
-              width: "30px",
-              height: "30px",
-              borderRadius: "8px",
-              border: "none",
-              background: "var(--primary)",
-              color: "var(--bg-color)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              opacity: (!chatInput.trim() || chatLoading) ? 0.4 : 1,
-              transition: "opacity 0.15s",
-            }}
+            title="Send"
           >
-            {chatLoading ? <Loader2 size={14} className="spin" /> : <ArrowUp size={14} />}
+            {chatLoading ? <Loader2 size={17} className="spin" /> : <ArrowUp size={17} />}
           </button>
         </div>
       </div>

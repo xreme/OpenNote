@@ -47,6 +47,14 @@ function App() {
   }, [darkMode]);
 
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [focusMode, setFocusMode] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const { width: sidebarWidth, isResizing: sidebarResizing, onMouseDown: onSidebarMouseDown } =
     useResizable({ key: "sidebar", defaultWidth: 320, minWidth: 200, maxWidth: 480 });
@@ -229,6 +237,23 @@ function App() {
     });
   };
 
+  // Focus mode collapses both side panels so the content column stands alone,
+  // and restores them on the way out.
+  const toggleFocusMode = () => {
+    setFocusMode((prev) => {
+      const next = !prev;
+      setSidebarVisible(!next);
+      setShowChatPanel(!next);
+      return next;
+    });
+  };
+
+  // Below this, the content column stops being usable next to an open chat.
+  const MAIN_MIN_WIDTH = 460;
+  const snapChat =
+    showChatPanel &&
+    viewportWidth - (sidebarVisible ? sidebarWidth : 0) - chatWidth < MAIN_MIN_WIDTH;
+
   const handleSaveSettings = async () => {
     const ok = await saveSettings();
     if (ok) setShowSettings(false);
@@ -274,7 +299,7 @@ function App() {
       />
       {sidebarVisible && <ResizeHandle onMouseDown={onSidebarMouseDown} active={sidebarResizing} />}
 
-      <div className="main-content">
+      <div className={`main-content ${snapChat ? "snapped-out" : ""}`}>
         {viewMode === "videos" ? (
           <>
             {selectedVideo ? (
@@ -290,6 +315,10 @@ function App() {
                 seekTo={seekTo}
                 syncTranscriptToVideo={syncTranscriptToVideo}
                 onExportTxt={downloadTxtLabel}
+                showChatPanel={showChatPanel}
+                setShowChatPanel={setShowChatPanel}
+                focusMode={focusMode}
+                onToggleFocus={toggleFocusMode}
                 notes={notes}
                 generating={generating}
                 onGenerateSummary={handleGenerateSummary}
@@ -317,11 +346,15 @@ function App() {
         )}
       </div>
 
-      {showChatPanel && <ResizeHandle onMouseDown={onChatMouseDown} direction={-1} active={chatResizing} />}
+      {showChatPanel && !snapChat && (
+        <ResizeHandle onMouseDown={onChatMouseDown} direction={-1} active={chatResizing} />
+      )}
       <ChatPanel
-        width={showChatPanel ? chatWidth : 0}
+        width={snapChat ? "auto" : showChatPanel ? chatWidth : 0}
+        snapped={snapChat}
         isResizing={chatResizing}
         showChatPanel={showChatPanel}
+        setShowChatPanel={setShowChatPanel}
         chatMessages={chatMessages}
         chatInput={chatInput}
         setChatInput={setChatInput}
