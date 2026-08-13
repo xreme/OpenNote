@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
 import {
-  Download,
   PanelLeftOpen,
   Sparkles,
   ChevronUp,
   ChevronDown,
   HardDriveDownload,
+  List,
+  Maximize2,
+  Minimize2,
+  MessageSquare,
   Plus,
   FileText,
   Layers,
@@ -38,13 +40,22 @@ const isPortraitSource = (video) => {
   return /tiktok\.com|instagram\.com/i.test(video.sourceUrl);
 };
 
+const STATUS = {
+  completed: { label: "Ready", className: "status-done" },
+  error: { label: "Error", className: "status-error" },
+};
+
+const statusOf = (video) =>
+  STATUS[video.status] || {
+    label: video.status.charAt(0).toUpperCase() + video.status.slice(1),
+    className: "status-loading",
+  };
+
 export default function VideoView({
   selectedVideo,
   videoRef,
   sidebarVisible,
   setSidebarVisible,
-  transcriptExpanded,
-  setTranscriptExpanded,
   showLocalSearch,
   setShowLocalSearch,
   localSearchQuery,
@@ -52,6 +63,10 @@ export default function VideoView({
   seekTo,
   syncTranscriptToVideo,
   onExportTxt,
+  showChatPanel,
+  setShowChatPanel,
+  focusMode,
+  onToggleFocus,
   notes,
   generating,
   onGenerateSummary,
@@ -111,6 +126,7 @@ export default function VideoView({
   };
 
   const activeArtifact = artifacts.find((a) => a.filename === activeTab);
+  const status = statusOf(selectedVideo);
 
   const renderPanelBody = () => {
     if (activeTab === "new") {
@@ -119,11 +135,11 @@ export default function VideoView({
           <div className="summary-empty-icon">
             <Sparkles size={24} />
           </div>
-          <p style={{ fontSize: "13px", fontWeight: 700, marginBottom: "6px" }}>Create a new artifact</p>
-          <p style={{ fontSize: "12px", color: "var(--text-dim)", marginBottom: "24px", textAlign: "center", lineHeight: 1.6 }}>
+          <p style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em", margin: "0 0 6px" }}>I want to make…</p>
+          <p style={{ fontSize: "13px", color: "var(--text-dimmer)", margin: "0 0 20px", textAlign: "center", lineHeight: 1.6 }}>
             {previewMode
               ? "Artifact generation is not available in preview mode."
-              : "Generate an AI artifact from this video's transcript."}
+              : "Generate an artifact from this transcript."}
           </p>
           {!previewMode && selectedVideo.status === "completed" && (
             <ArtifactGenerator
@@ -167,11 +183,7 @@ export default function VideoView({
   };
 
   return (
-    <motion.div
-      key={selectedVideo.id}
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
+    <div
       style={{
         display: "flex",
         flexDirection: "column",
@@ -180,43 +192,53 @@ export default function VideoView({
       }}
     >
       <div className="content-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          {!sidebarVisible && (
-            <button
-              onClick={() => setSidebarVisible(true)}
-              className="icon-btn-toggle"
-              title="Show Sidebar"
-            >
-              <PanelLeftOpen size={20} />
-            </button>
-          )}
-          <div style={{ minWidth: 0 }}>
-            <h2 style={{ margin: 0, fontSize: "18px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "480px" }}
-                title={selectedVideo.originalName}>
+        {!sidebarVisible && (
+          <button
+            onClick={() => setSidebarVisible(true)}
+            className="header-icon-btn"
+            title="Show sidebar"
+          >
+            <PanelLeftOpen size={16} />
+          </button>
+        )}
+
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <h2 className="content-title" title={selectedVideo.originalName}>
               {selectedVideo.originalName}
             </h2>
-            <p style={{ margin: "4px 0 0", fontSize: "10px", color: "var(--text-dim)", letterSpacing: "1px" }}>
-              ID: {selectedVideo.id}
-            </p>
+            <span className={`status-pill ${status.className}`}>{status.label}</span>
           </div>
+          <p className="content-subtitle">ID: {selectedVideo.id}</p>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {selectedVideo.status === "completed" && selectedVideo.sourceUrl && !selectedVideo.outputPath && (
-            <button
-              className="export-btn"
-              onClick={() => downloadVideoLocally(selectedVideo.id).catch(() => alert("Failed to start download"))}
-              title="Download video locally using yt-dlp"
-            >
-              <HardDriveDownload size={16} /> Download Video
-            </button>
-          )}
-          {selectedVideo.status === "completed" && (
-            <button className="export-btn" onClick={onExportTxt}>
-              <Download size={16} /> Export TXT
-            </button>
-          )}
-        </div>
+        {selectedVideo.status === "completed" && selectedVideo.sourceUrl && !selectedVideo.outputPath && (
+          <button
+            className="export-btn"
+            onClick={() => downloadVideoLocally(selectedVideo.id).catch(() => alert("Failed to start download"))}
+            title="Download video locally using yt-dlp"
+          >
+            <HardDriveDownload size={15} /> Download video
+          </button>
+        )}
+
+        {!showChatPanel && (
+          <button
+            className="header-icon-btn"
+            onClick={() => setShowChatPanel?.((prev) => !prev)}
+            title="Show chat"
+          >
+            <MessageSquare size={15} />
+          </button>
+        )}
+
+        <button
+          className={`header-icon-btn ${focusMode ? "active" : ""}`}
+          onClick={onToggleFocus}
+          title={focusMode ? "Exit focus mode" : "Focus mode"}
+        >
+          {focusMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+        </button>
       </div>
 
       <div className="content-viewport" style={{ flex: 1, overflow: "hidden" }}>
@@ -239,7 +261,7 @@ export default function VideoView({
             className={`video-tab ${activeTab === "transcript" ? "active" : ""}`}
             onClick={() => setActiveTab("transcript")}
           >
-            Transcription
+            <List size={14} /> Transcript
           </button>
 
           {artifacts.map((art) => {
@@ -251,7 +273,7 @@ export default function VideoView({
                 onClick={() => setActiveTab(art.filename)}
                 title={art.label}
               >
-                <Icon size={13} /> {art.label}
+                <Icon size={14} /> {art.label}
               </button>
             );
           })}
@@ -262,31 +284,30 @@ export default function VideoView({
               onClick={() => setActiveTab("new")}
               title="New artifact"
             >
-              <Plus size={14} />
+              <Plus size={15} />
             </button>
           )}
 
           <button
-            className="video-tab"
-            style={{ marginLeft: "auto" }}
+            className="video-tab video-tab-expand"
             onClick={() => setBottomExpanded((v) => !v)}
-            title={bottomExpanded ? "Show video" : "Expand panel"}
+            title={bottomExpanded ? "Show video" : "Focus artifacts"}
           >
-            {bottomExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+            {bottomExpanded ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
           </button>
         </div>
 
         {activeTab === "transcript" ? (
           <TranscriptSection
             selectedVideo={selectedVideo}
-            transcriptExpanded={transcriptExpanded}
-            setTranscriptExpanded={setTranscriptExpanded}
+            videoRef={videoRef}
             showLocalSearch={showLocalSearch}
             setShowLocalSearch={setShowLocalSearch}
             localSearchQuery={localSearchQuery}
             setLocalSearchQuery={setLocalSearchQuery}
             seekTo={seekTo}
             syncTranscriptToVideo={syncTranscriptToVideo}
+            onExportTxt={onExportTxt}
           />
         ) : (
           <div className="summary-panel">
@@ -303,6 +324,6 @@ export default function VideoView({
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
