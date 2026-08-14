@@ -60,12 +60,11 @@ function Flashcard({ card, index }) {
       className={`flashcard ${revealed ? "revealed" : ""}`}
       onClick={() => setRevealed((v) => !v)}
     >
-      <span className="flashcard-index">Card {index + 1}</span>
-      <span className="flashcard-q">{card.question}</span>
+      <span className="flashcard-index">{revealed ? "Answer" : `Question ${index + 1}`}</span>
       {revealed ? (
         <span className="flashcard-a">{card.answer}</span>
       ) : (
-        <span className="flashcard-hint">Click to reveal answer</span>
+        <span className="flashcard-q">{card.question}</span>
       )}
     </button>
   );
@@ -76,7 +75,8 @@ function QuizQuestion({ q, index }) {
   return (
     <div className="quiz-question">
       <p className="quiz-q">
-        {index + 1}. {q.question}
+        <span className="quiz-q-number">{index + 1}</span>
+        <span>{q.question}</span>
       </p>
       <div className="quiz-options">
         {q.options.map((opt) => {

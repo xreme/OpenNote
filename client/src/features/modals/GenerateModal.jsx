@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 import ArtifactGenerator from "../artifacts/ArtifactGenerator";
 
 export default function GenerateModal({
@@ -23,7 +23,8 @@ export default function GenerateModal({
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Generate Artifact</h3>
+          <div className="modal-icon"><Sparkles size={19} /></div>
+          <h3>Generate artifact</h3>
           <button onClick={onClose}>
             <X size={18} />
           </button>

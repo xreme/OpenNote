@@ -51,7 +51,8 @@ export default function ExportModal({ show, onClose, videos }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Export Transcripts</h3>
+          <div className="modal-icon"><Download size={18} /></div>
+          <h3>Bulk export transcripts</h3>
           <button onClick={onClose}>
             <X size={18} />
           </button>

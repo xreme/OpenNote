@@ -44,7 +44,8 @@ export default function AddContentModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
-          <h3>Add Content</h3>
+          <div className="modal-icon"><Plus size={19} /></div>
+          <h3>Add content</h3>
           <button onClick={handleClose}>
             <X size={18} />
           </button>
