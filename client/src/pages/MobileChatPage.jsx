@@ -95,10 +95,10 @@ export default function MobileChatPage() {
         padding: '12px 16px',
         paddingTop: 'calc(12px + env(safe-area-inset-top))',
         background: 'var(--sidebar-bg)',
-        borderBottom: '2px solid var(--card-border)',
+        borderBottom: '1px solid var(--card-border)',
       }}>
         <MessageSquare size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-        <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '0.03em', flexShrink: 0 }}>
+        <span style={{ fontSize: '13px', fontWeight: 'bold', flexShrink: 0 }}>
           OpenNote
         </span>
         <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
@@ -108,8 +108,8 @@ export default function MobileChatPage() {
             style={{
               width: '100%',
               padding: '4px 28px 4px 10px',
-              border: '2px solid var(--card-border)',
-              borderRadius: '8px',
+              border: '1px solid var(--card-border)',
+              borderRadius: '12px',
               background: 'var(--card-bg)',
               color: 'var(--text-main)',
               fontFamily: 'inherit',
@@ -206,7 +206,7 @@ export default function MobileChatPage() {
                   style={{
                     background: 'none',
                     border: '1px solid var(--card-border)',
-                    borderRadius: '6px',
+                    borderRadius: '9px',
                     padding: '4px 10px',
                     fontSize: '12px',
                     color: 'var(--text-dim)',
@@ -278,12 +278,12 @@ export default function MobileChatPage() {
         padding: '12px 16px',
         paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
         background: 'var(--sidebar-bg)',
-        borderTop: '2px solid var(--card-border)',
+        borderTop: '1px solid var(--card-border)',
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'flex-end',
-          border: '2px solid var(--card-border)',
+          border: '1px solid var(--card-border)',
           borderRadius: '16px',
           background: 'var(--card-bg)',
           padding: '8px 8px 8px 14px',

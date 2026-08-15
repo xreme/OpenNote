@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import rawAxios from "axios";
 import { PASSWORD_KEY } from "../../services/axiosInstance";
 import usePreviewMode from "../../hooks/usePreviewMode";
+import { API_BASE } from "../../constants/api";
 
 const styles = {
   backdrop: {
@@ -69,7 +70,7 @@ const styles = {
 
 async function ping(password) {
   const headers = password ? { "x-app-password": password } : {};
-  return rawAxios.get("/ping", { headers });
+  return rawAxios.get(`${API_BASE}/ping`, { headers });
 }
 
 export default function PasswordGate({ children }) {

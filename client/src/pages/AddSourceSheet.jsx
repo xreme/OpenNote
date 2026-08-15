@@ -78,7 +78,7 @@ export default function AddSourceSheet({ collectionId, onClose, onSuccess }) {
           width: '100%',
           background: 'var(--bg-color)',
           borderRadius: '16px 16px 0 0',
-          border: '2px solid var(--card-border)',
+          border: '1px solid var(--card-border)',
           borderBottom: 'none',
           display: 'flex',
           flexDirection: 'column',

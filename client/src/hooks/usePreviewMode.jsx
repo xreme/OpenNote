@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import rawAxios from "axios";
+import { API_BASE } from "../constants/api";
 
 const PreviewContext = createContext({ previewMode: false, loaded: false });
 
@@ -8,7 +9,7 @@ export function PreviewProvider({ children }) {
 
   useEffect(() => {
     rawAxios
-      .get("/api/preview-status")
+      .get(`${API_BASE}/api/preview-status`)
       .then((res) => setStatus({ previewMode: res.data.previewMode === true, loaded: true }))
       .catch(() => setStatus({ previewMode: false, loaded: true }));
   }, []);

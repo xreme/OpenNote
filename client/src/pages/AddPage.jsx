@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { CheckCircle, AlertCircle, ChevronDown, Loader2, ChevronLeft } from "lucide-react";
+import { CheckCircle, AlertCircle, ChevronDown, Loader2, ChevronLeft, NotebookPen } from "lucide-react";
 import usePreviewMode from "../hooks/usePreviewMode";
 
 export default function AddPage() {
@@ -90,7 +90,7 @@ export default function AddPage() {
           <p style={{ margin: 0, color: "var(--text-dim)", fontSize: "14px" }}>
             Adding content is not available in preview mode.
           </p>
-          <a href="/library" style={{ ...s.btn, textDecoration: "none", textAlign: "center" }}>Go to Library</a>
+          <a href={`${import.meta.env.BASE_URL}library`} style={{ ...s.btn, textDecoration: "none", textAlign: "center" }}>Go to Library</a>
         </div>
       </div>
     );
@@ -115,7 +115,7 @@ export default function AddPage() {
     <div style={s.page}>
       <header style={s.header}>
         <a
-          href="/library"
+          href={`${import.meta.env.BASE_URL}library`}
           style={{
             display: "inline-flex", alignItems: "center", gap: "4px",
             fontSize: "12px", color: "var(--text-dim)", textDecoration: "none",
@@ -124,11 +124,21 @@ export default function AddPage() {
         >
           <ChevronLeft size={14} /> Library
         </a>
-        <div style={{ color: "var(--primary)", fontWeight: 800, fontSize: "22px", letterSpacing: "0.12em" }}>
-          OPENNOTE
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+          <span style={{
+            width: "34px", height: "34px", borderRadius: "11px",
+            background: "var(--primary)", color: "#fff",
+            display: "grid", placeItems: "center",
+            boxShadow: "0 1px 2px rgba(0,0,0,.06)",
+          }}>
+            <NotebookPen size={18} />
+          </span>
+          <span style={{ color: "var(--text-main)", fontWeight: 800, fontSize: "22px", letterSpacing: "-0.02em" }}>
+            OpenNote
+          </span>
         </div>
-        <div style={{ color: "var(--text-dim)", fontSize: "13px", marginTop: "4px", letterSpacing: "0.06em" }}>
-          Add to vault
+        <div style={{ color: "var(--text-faint)", fontSize: "13px", marginTop: "6px" }}>
+          Add to this collection
         </div>
       </header>
 
@@ -182,7 +192,7 @@ export default function AddPage() {
 
         <div style={{ ...s.divider, display: "flex", alignItems: "center", gap: "12px" }}>
           <div style={{ flex: 1, height: "1px", background: "var(--card-border)" }} />
-          <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-dim)", letterSpacing: "0.08em", textTransform: "uppercase" }}>or</span>
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-ghost)", letterSpacing: "0.04em", textTransform: "uppercase" }}>or</span>
           <div style={{ flex: 1, height: "1px", background: "var(--card-border)" }} />
         </div>
 
@@ -267,11 +277,11 @@ const s = {
     gap: "8px",
   },
   label: {
-    fontSize: "11px",
-    fontWeight: 800,
+    fontSize: "10.5px",
+    fontWeight: 700,
     textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: "var(--text-dim)",
+    letterSpacing: "0.1em",
+    color: "var(--text-faint)",
   },
   input: {
     width: "100%",

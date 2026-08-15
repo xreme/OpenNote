@@ -33,31 +33,31 @@ const STATUS = {
   completed: {
     label: "Ready",
     color: "var(--success)",
-    bg: "rgba(58,158,82,0.12)",
+    bg: "var(--success-bg)",
     spinning: false,
   },
   error: {
     label: "Error",
-    color: "#d94f4f",
-    bg: "rgba(217,79,79,0.12)",
+    color: "var(--danger)",
+    bg: "var(--danger-bg)",
     spinning: false,
   },
   uploading: {
     label: "Uploading",
     color: "var(--accent)",
-    bg: "rgba(230,195,91,0.15)",
+    bg: "var(--accent-bg)",
     spinning: true,
   },
   compressing: {
     label: "Compressing",
     color: "var(--accent)",
-    bg: "rgba(230,195,91,0.15)",
+    bg: "var(--accent-bg)",
     spinning: true,
   },
   transcribing: {
     label: "Transcribing",
     color: "var(--accent)",
-    bg: "rgba(230,195,91,0.15)",
+    bg: "var(--accent-bg)",
     spinning: true,
   },
 };
@@ -71,11 +71,9 @@ function StatusBadge({ status }) {
         alignItems: "center",
         gap: "4px",
         padding: "2px 8px",
-        borderRadius: "20px",
-        fontSize: "10px",
+        borderRadius: "7px",
+        fontSize: "10.5px",
         fontWeight: 700,
-        letterSpacing: "0.05em",
-        textTransform: "uppercase",
         color: cfg.color,
         background: cfg.bg,
       }}
@@ -606,14 +604,14 @@ export default function MobileLibraryPage() {
                 <div
                   style={{
                     padding: "16px 16px 8px",
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    letterSpacing: "0.08em",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
                     textTransform: "uppercase",
-                    color: "var(--text-dim)",
+                    color: "var(--text-faint)",
                   }}
                 >
-                  Sources — {videosWithSummary.length}
+                  Sources · {videosWithSummary.length}
                 </div>
                 {videosWithSummary.map((video) => (
                   <div
@@ -707,14 +705,14 @@ export default function MobileLibraryPage() {
                 <div
                   style={{
                     padding: "16px 16px 8px",
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    letterSpacing: "0.08em",
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
                     textTransform: "uppercase",
-                    color: "var(--text-dim)",
+                    color: "var(--text-faint)",
                   }}
                 >
-                  Notes — {standaloneNotes.length}
+                  Notes · {standaloneNotes.length}
                 </div>
                 {standaloneNotes.map((note) => (
                   <button

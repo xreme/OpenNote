@@ -8,7 +8,9 @@ export default function PreviewBanner() {
     () => sessionStorage.getItem(DISMISSED_KEY) === "true"
   );
   const mobilePaths = ['/mobile', '/library', '/chat', '/search'];
-  const isSmallScreen = window.innerWidth < 900 && !mobilePaths.includes(window.location.pathname);
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const currentPath = window.location.pathname.slice(basePath.length) || '/';
+  const isSmallScreen = window.innerWidth < 900 && !mobilePaths.includes(currentPath);
 
   if (dismissed) return null;
 
@@ -105,7 +107,7 @@ export default function PreviewBanner() {
 
         {isSmallScreen && (
           <a
-            href="/mobile"
+            href={`${import.meta.env.BASE_URL}mobile`}
             style={{
               display: "flex",
               alignItems: "center",
