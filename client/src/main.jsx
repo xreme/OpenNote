@@ -14,7 +14,10 @@ const PATH_TO_TAB = {
   '/search':   'Search',
 }
 
-const path = window.location.pathname
+// Routes are matched relative to the deploy base (BASE_URL is '/' unless built
+// with VITE_BASE_PATH), so /opennote/mobile resolves the same as /mobile.
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
+const path = window.location.pathname.slice(BASE.length) || '/'
 const mobileTab = PATH_TO_TAB[path]
 
 createRoot(document.getElementById('root')).render(

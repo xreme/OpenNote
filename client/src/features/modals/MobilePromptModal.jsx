@@ -36,7 +36,7 @@ export default function MobilePromptModal({ blocked }) {
             OpenNote has a mobile version optimised for your screen size.
           </p>
           <a
-            href="/mobile"
+            href={`${import.meta.env.BASE_URL}mobile`}
             style={{
               display: "block",
               padding: "8px 16px",

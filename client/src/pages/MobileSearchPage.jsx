@@ -85,7 +85,7 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
         padding: '12px 16px',
         paddingTop: 'calc(12px + env(safe-area-inset-top))',
         background: 'var(--sidebar-bg)',
-        borderBottom: '2px solid var(--card-border)',
+        borderBottom: '1px solid var(--card-border)',
       }}>
         <button onClick={onBack} style={{
           background: 'none', border: 'none', padding: '2px 0',
@@ -155,9 +155,9 @@ function DetailView({ item, collectionId, onBack, onRefresh }) {
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
                   padding: '12px 24px',
                   background: 'var(--primary)', color: 'var(--bg-color)',
-                  border: '2px solid var(--card-border)', borderRadius: '8px',
+                  border: '1px solid var(--card-border)', borderRadius: '12px',
                   fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
-                  cursor: 'pointer', letterSpacing: '0.03em',
+                  cursor: 'pointer',
                 }}
               >
                 <Sparkles size={14} /> Generate Summary
@@ -301,10 +301,10 @@ export default function MobileSearchPage() {
         padding: '12px 16px',
         paddingTop: 'calc(12px + env(safe-area-inset-top))',
         background: 'var(--sidebar-bg)',
-        borderBottom: '2px solid var(--card-border)',
+        borderBottom: '1px solid var(--card-border)',
       }}>
         <Search size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-        <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '0.03em', flexShrink: 0 }}>
+        <span style={{ fontSize: '13px', fontWeight: 'bold', flexShrink: 0 }}>
           OpenNote
         </span>
         <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
@@ -313,7 +313,7 @@ export default function MobileSearchPage() {
             onChange={e => handleCollectionChange(e.target.value)}
             style={{
               width: '100%', padding: '4px 28px 4px 10px',
-              border: '2px solid var(--card-border)', borderRadius: '8px',
+              border: '1px solid var(--card-border)', borderRadius: '12px',
               background: 'var(--card-bg)', color: 'var(--text-main)',
               fontFamily: 'inherit', fontSize: '16px',
               cursor: 'pointer', outline: 'none', appearance: 'none',
@@ -343,7 +343,7 @@ export default function MobileSearchPage() {
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
-          border: '2px solid var(--card-border)', borderRadius: '10px',
+          border: '1px solid var(--card-border)', borderRadius: '10px',
           background: 'var(--card-bg)', padding: '0 12px',
         }}>
           <Search size={15} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />

@@ -3,8 +3,7 @@ import { getCollections } from '../services/collectionsService';
 import { getVideos, deleteVideoById, retryVideo } from '../services/videoService';
 import { getNotes, generateNotesForVideos } from '../services/notesService';
 import { sendChatQuery } from '../services/chatService';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import ArtifactContent from '../features/artifacts/ArtifactContent';
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
   Sparkles, Loader2, FileVideo, FileText,
@@ -25,11 +24,11 @@ const toCleanName = (name) =>
   name.replace(/\.[^.]+$/, '').replace(/[^a-z0-9.]/gi, '_');
 
 const STATUS = {
-  completed:    { label: 'Ready',        color: 'var(--success)',  bg: 'rgba(58,158,82,0.12)',  spinning: false },
-  error:        { label: 'Error',        color: '#d94f4f',         bg: 'rgba(217,79,79,0.12)',  spinning: false },
-  uploading:    { label: 'Uploading',    color: 'var(--accent)',   bg: 'rgba(230,195,91,0.15)', spinning: true  },
-  compressing:  { label: 'Compressing',  color: 'var(--accent)',   bg: 'rgba(230,195,91,0.15)', spinning: true  },
-  transcribing: { label: 'Transcribing', color: 'var(--accent)',   bg: 'rgba(230,195,91,0.15)', spinning: true  },
+  completed:    { label: 'Ready',        color: 'var(--success)',  bg: 'var(--success-bg)',  spinning: false },
+  error:        { label: 'Error',        color: 'var(--danger)',   bg: 'var(--danger-bg)',  spinning: false },
+  uploading:    { label: 'Uploading',    color: 'var(--accent)',   bg: 'var(--accent-bg)', spinning: true  },
+  compressing:  { label: 'Compressing',  color: 'var(--accent)',   bg: 'var(--accent-bg)', spinning: true  },
+  transcribing: { label: 'Transcribing', color: 'var(--accent)',   bg: 'var(--accent-bg)', spinning: true  },
 };
 
 function StatusBadge({ status }) {
@@ -37,8 +36,8 @@ function StatusBadge({ status }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: '4px',
-      padding: '2px 8px', borderRadius: '20px',
-      fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+      padding: '2px 8px', borderRadius: '7px',
+      fontSize: '10.5px', fontWeight: 700,
       color: cfg.color, background: cfg.bg,
     }}>
       {cfg.spinning && <Loader2 size={9} className="spin" />}
@@ -84,6 +83,7 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
     : item.originalName.replace(/\.[^.]+$/, '');
 
   const [content, setContent] = useState(isNote ? item.content : item._summary?.content ?? null);
+  const [contentType, setContentType] = useState(isNote ? item.type : item._summary?.type ?? null);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
@@ -104,7 +104,10 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
       const res = await getNotes(collectionId);
       const cleanName = toCleanName(item.originalName);
       const match = res.data.find(n => n.filename.startsWith(cleanName));
-      if (match) setContent(match.content);
+      if (match) {
+        setContent(match.content);
+        setContentType(match.type ?? null);
+      }
       if (onRefresh) onRefresh();
     } catch (err) {
       setGenError(err.response?.data?.error || 'Generation failed. Please try again.');
@@ -127,7 +130,7 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
         padding: '12px 16px',
         paddingTop: 'calc(12px + env(safe-area-inset-top))',
         background: 'var(--sidebar-bg)',
-        borderBottom: '2px solid var(--card-border)',
+        borderBottom: '1px solid var(--card-border)',
       }}>
         <button onClick={onBack} style={{
           background: 'none', border: 'none', padding: '2px 0',
@@ -175,7 +178,7 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
         <div style={{
           flexShrink: 0,
           display: 'flex',
-          borderBottom: '2px solid var(--card-border)',
+          borderBottom: '1px solid var(--card-border)',
           background: 'var(--sidebar-bg)',
         }}>
           {['summary', 'transcript'].map(tab => (
@@ -183,14 +186,13 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
-                flex: 1, padding: '10px',
-                background: 'none', border: 'none',
-                borderBottom: activeTab === tab ? '2px solid var(--primary)' : '2px solid transparent',
-                marginBottom: '-2px',
-                color: activeTab === tab ? 'var(--primary)' : 'var(--text-dim)',
-                fontSize: '12px', fontWeight: 700, fontFamily: 'inherit',
-                letterSpacing: '0.05em', textTransform: 'uppercase',
-                cursor: 'pointer',
+                flex: 1, height: '34px', padding: '0 14px',
+                background: activeTab === tab ? 'var(--primary)' : 'transparent',
+                border: 'none', borderRadius: 'var(--radius-sm)',
+                color: activeTab === tab ? 'var(--on-primary)' : 'var(--text-dim)',
+                fontSize: '12.5px', fontWeight: 700, fontFamily: 'inherit',
+                textTransform: 'capitalize',
+                cursor: 'pointer', transition: 'background .12s, color .12s',
               }}
             >
               {tab}
@@ -205,7 +207,7 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
         paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
       }}>
         {hasPreview && (
-          <div style={{ borderBottom: '2px solid var(--card-border)' }}>
+          <div style={{ borderBottom: '1px solid var(--card-border)' }}>
             <button
               onClick={() => setPreviewOpen(v => !v)}
               style={{
@@ -213,8 +215,8 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
                 width: '100%', padding: '10px 16px',
                 background: 'none', border: 'none', cursor: 'pointer',
                 color: 'var(--text-main)', fontFamily: 'inherit',
-                fontSize: '11px', fontWeight: 800,
-                letterSpacing: '0.08em', textTransform: 'uppercase',
+                fontSize: '10.5px', fontWeight: 700,
+                letterSpacing: '0.1em', textTransform: 'uppercase',
               }}
             >
               Preview
@@ -248,9 +250,11 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
               Generating summary…
             </div>
           ) : content ? (
-            <div className="markdown-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-            </div>
+            <ArtifactContent
+              content={content}
+              type={contentType}
+              markdownClassName="markdown-content"
+            />
           ) : (
             <div style={{ textAlign: 'center', color: 'var(--text-dim)', marginTop: '80px', fontSize: '13px', lineHeight: '1.7', padding: '0 24px' }}>
               <Sparkles size={32} style={{ opacity: 0.2, display: 'block', margin: '0 auto 14px' }} />
@@ -267,7 +271,7 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
                     display: 'inline-flex', alignItems: 'center', gap: '8px',
                     padding: '12px 24px',
                     background: 'var(--primary)', color: 'var(--bg-color)',
-                    border: '2px solid var(--card-border)', borderRadius: '8px',
+                    border: '1px solid var(--card-border)', borderRadius: '12px',
                     fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
                     cursor: previewMode ? 'not-allowed' : 'pointer',
                     letterSpacing: '0.03em',
@@ -298,7 +302,7 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
                 }}>
                   <span style={{
                     flexShrink: 0, fontSize: '11px', fontWeight: 700,
-                    color: 'var(--text-dim)', letterSpacing: '0.03em',
+                    color: 'var(--text-dim)',
                     paddingTop: '2px', minWidth: '36px',
                   }}>
                     {formatTimestamp(seg.start)}
@@ -502,19 +506,26 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
         padding: '12px 16px',
         paddingTop: 'calc(12px + env(safe-area-inset-top))',
         background: 'var(--sidebar-bg)',
-        borderBottom: '2px solid var(--card-border)',
+        borderBottom: '1px solid var(--card-border)',
       }}>
-        <TabIcon size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-        <span style={{ fontSize: '13px', fontWeight: 'bold', letterSpacing: '0.03em', flexShrink: 0 }}>
+        <span style={{
+          width: '32px', height: '32px', flexShrink: 0,
+          borderRadius: '10px', background: 'var(--primary)', color: '#fff',
+          display: 'grid', placeItems: 'center',
+          boxShadow: '0 1px 2px rgba(0,0,0,.06)',
+        }}>
+          <TabIcon size={17} />
+        </span>
+        <span style={{ fontSize: '16px', fontWeight: 800, letterSpacing: '-0.02em', flexShrink: 0 }}>
           OpenNote
         </span>
         {previewMode && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: '3px',
-            padding: '2px 6px', borderRadius: '20px',
-            fontSize: '8px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase',
-            color: 'var(--primary)', background: 'rgba(200,170,110,0.15)',
-            border: '1px solid rgba(200,170,110,0.3)', whiteSpace: 'nowrap', flexShrink: 0,
+            padding: '3px 8px', borderRadius: '8px',
+            fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
+            color: 'var(--accent-ink)', background: 'var(--accent-bg)',
+            border: 'none', whiteSpace: 'nowrap', flexShrink: 0,
           }}>
             <Eye size={8} /> Preview
           </span>
@@ -524,11 +535,12 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
             value={collectionId}
             onChange={e => handleCollectionChange(e.target.value)}
             style={{
-              width: '100%', padding: '4px 28px 4px 10px',
-              border: '2px solid var(--card-border)', borderRadius: '8px',
-              background: 'var(--card-bg)', color: 'var(--text-main)',
-              fontFamily: 'inherit', fontSize: '16px',
+              width: '100%', height: '36px', padding: '0 30px 0 12px',
+              border: '1px solid var(--card-border)', borderRadius: '12px',
+              background: 'var(--surface-soft)', color: 'var(--text-main)',
+              fontFamily: 'inherit', fontSize: '16px', fontWeight: 600,
               cursor: 'pointer', outline: 'none', appearance: 'none',
+              textOverflow: 'ellipsis',
             }}
           >
             {collections.length === 0 && <option value="">Loading...</option>}
@@ -559,8 +571,8 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                 width: '100%', padding: '10px',
-                background: 'var(--primary)', borderRadius: '8px',
-                border: '2px solid var(--card-border)',
+                background: 'var(--primary)', borderRadius: '12px',
+                border: '1px solid var(--card-border)',
                 color: 'var(--bg-color)',
                 fontSize: '13px', fontWeight: 700, fontFamily: 'inherit',
                 letterSpacing: '0.03em',
@@ -594,7 +606,7 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
                       fontFamily: 'inherit', textAlign: 'left',
                     }}
                   >
-                    <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-dim)', flex: 1 }}>
+                    <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-faint)', flex: 1 }}>
                       Notes — {standaloneNotes.length}
                     </span>
                     <ChevronDown size={14} style={{ color: 'var(--text-dim)', flexShrink: 0, transform: notesExpanded ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }} />
@@ -634,18 +646,20 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
                       fontFamily: 'inherit', textAlign: 'left',
                     }}
                   >
-                    <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-dim)', flex: 1 }}>
-                      Sources — {videosWithSummary.length}
+                    <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-faint)', flex: 1 }}>
+                      Sources · {videosWithSummary.length}
                     </span>
                     <ChevronDown size={14} style={{ color: 'var(--text-dim)', flexShrink: 0, transform: sourcesExpanded ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }} />
                   </button>
                   {sourcesExpanded && videosWithSummary.map(video => (
-                    <div key={video.id} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--card-border)' }}>
+                    <div key={video.id} style={{ display: 'flex', alignItems: 'center', margin: '0 12px 6px', borderRadius: 'var(--radius)', background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                       <div
                         onClick={() => setLibSelected(video)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, padding: '14px 0 14px 16px', cursor: 'pointer' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '11px', flex: 1, minWidth: 0, padding: '12px 0 12px 12px', cursor: 'pointer' }}
                       >
-                        <FileVideo size={18} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+                        <span style={{ width: '34px', height: '34px', flexShrink: 0, borderRadius: '11px', background: 'var(--surface-soft)', color: 'var(--text-dimmer)', display: 'grid', placeItems: 'center' }}>
+                          <FileVideo size={16} />
+                        </span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '14px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {video.originalName.replace(/\.[^.]+$/, '')}
@@ -659,11 +673,11 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
                             )}
                           </div>
                         </div>
-                        <ChevronRight size={16} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+                        <ChevronRight size={16} style={{ color: 'var(--text-ghost)', flexShrink: 0 }} />
                       </div>
                       <button
                         onClick={() => setLibInfoVideo(video)}
-                        style={{ background: 'none', border: 'none', padding: '14px 16px', cursor: 'pointer', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                        style={{ background: 'none', border: 'none', padding: '12px 14px', cursor: 'pointer', color: 'var(--text-faint)', display: 'flex', alignItems: 'center', flexShrink: 0 }}
                       >
                         <Eye size={16} />
                       </button>
@@ -698,7 +712,7 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: '8px' }}>
                 <div style={{
                   maxWidth: '88%', padding: '11px 15px',
-                  borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                  borderRadius: msg.role === 'user' ? '16px 16px 5px 16px' : '16px 16px 16px 5px',
                   background: msg.role === 'user' ? 'var(--primary)' : 'var(--card-bg)',
                   border: msg.role === 'user' ? 'none' : '2px solid var(--card-border)',
                   fontSize: '14px', lineHeight: '1.65', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
@@ -711,7 +725,7 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
                     <button
                       onClick={() => setExpandedSources(prev => ({ ...prev, [i]: !prev[i] }))}
                       style={{
-                        background: 'none', border: '1px solid var(--card-border)', borderRadius: '6px',
+                        background: 'none', border: '1px solid var(--card-border)', borderRadius: '9px',
                         padding: '4px 10px', fontSize: '12px', color: 'var(--text-dim)',
                         cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'inherit',
                       }}
@@ -756,12 +770,12 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
             padding: '12px 16px',
             paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
             background: 'var(--sidebar-bg)',
-            borderTop: '2px solid var(--card-border)',
+            borderTop: '1px solid var(--card-border)',
           }}>
             <div style={{
               display: 'flex', alignItems: 'flex-end',
-              border: '2px solid var(--card-border)', borderRadius: '16px',
-              background: 'var(--card-bg)', padding: '8px 8px 8px 14px', gap: '8px',
+              border: '1.5px solid transparent', borderRadius: '16px',
+              background: 'var(--surface-soft)', padding: '8px 8px 8px 14px', gap: '8px',
             }}>
               <textarea
                 ref={textareaRef}
@@ -812,7 +826,7 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '10px',
-              border: '2px solid var(--card-border)', borderRadius: '10px',
+              border: '1px solid var(--card-border)', borderRadius: '10px',
               background: 'var(--card-bg)', padding: '0 12px',
             }}>
               <SearchIcon size={15} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
@@ -860,8 +874,8 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
               <>
                 {videoResults.length > 0 && (
                   <section>
-                    <div style={{ padding: '14px 16px 6px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-dim)' }}>
-                      Sources — {videoResults.length}
+                    <div style={{ padding: '14px 16px 6px', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-faint)' }}>
+                      Sources · {videoResults.length}
                     </div>
                     {videoResults.map(video => {
                       const nameMatch = video.originalName.toLowerCase().includes(q);
@@ -898,7 +912,7 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
                 )}
                 {noteResults.length > 0 && (
                   <section>
-                    <div style={{ padding: '14px 16px 6px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-dim)' }}>
+                    <div style={{ padding: '14px 16px 6px', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-faint)' }}>
                       Notes — {noteResults.length}
                     </div>
                     {noteResults.map(note => {
