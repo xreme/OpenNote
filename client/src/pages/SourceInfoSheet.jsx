@@ -61,7 +61,7 @@ export default function SourceInfoSheet({ video, onClose, onRetry, onDelete, pre
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.45)',
         display: 'flex', alignItems: 'flex-end',
-        fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+        fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
       }}
     >
       <div

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Plus, Pencil, Trash2 } from "lucide-react";
+import { X, Plus, Pencil, Trash2, Settings } from "lucide-react";
 
 export default function SettingsModal({
   show,
@@ -54,6 +54,7 @@ export default function SettingsModal({
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
+          <div className="modal-icon subtle"><Settings size={19} /></div>
           <h3>Settings</h3>
           <button onClick={onClose}>
             <X size={18} />

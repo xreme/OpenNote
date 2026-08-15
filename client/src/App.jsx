@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
 
 import { downloadNoteUrl } from "./services/notesService";
 
@@ -44,19 +43,27 @@ function App() {
   useEffect(() => {
     document.body.classList.toggle("dark", darkMode);
     document.querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", darkMode ? "#242424" : "#f0efe9");
+      ?.setAttribute("content", darkMode ? "#1a1917" : "#f6f5ef");
   }, [darkMode]);
 
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [notesSidebarVisible, setNotesSidebarVisible] = useState(true);
+  const [focusMode, setFocusMode] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const { width: sidebarWidth, isResizing: sidebarResizing, onMouseDown: onSidebarMouseDown } =
     useResizable({ key: "sidebar", defaultWidth: 320, minWidth: 200, maxWidth: 480 });
   const { width: chatWidth, isResizing: chatResizing, onMouseDown: onChatMouseDown } =
     useResizable({ key: "chat", defaultWidth: 360, minWidth: 240, maxWidth: 520 });
-  const [viewMode, setViewMode] = useState("videos");
+  // The main pane follows whatever was picked last: choose a source and you get
+  // the video view, choose a note and you get the note view. There is no toggle.
+  const [lastSelected, setLastSelected] = useState("video");
   const [search, setSearch] = useState("");
-  const [transcriptExpanded, setTranscriptExpanded] = useState(false);
 
   const [showSettings, setShowSettings] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -80,7 +87,7 @@ function App() {
     handleUpload,
     handleUrlUpload,
     deleteVideo,
-    moveVideo,
+    reorderVideo,
     saveRename,
     openFolder,
   } = useVideos(activeCollectionId);
@@ -90,13 +97,25 @@ function App() {
     selectedNote,
     setSelectedNote,
     generating,
-    fetchNotes,
     generateNotes,
     createNote,
     saveNote,
     renameNote,
     deleteNote,
   } = useNotes(activeCollectionId);
+
+  const selectVideo = (id) => {
+    setSelectedId(id);
+    setLastSelected("video");
+  };
+
+  const selectNote = (note) => {
+    setSelectedNote(note);
+    setLastSelected("note");
+  };
+
+  // A note that has gone away (deleted, or a collection switch) falls back to videos.
+  const viewMode = lastSelected === "note" && selectedNote ? "notes" : "videos";
 
   const { settings, setSettings, encoderPresets, saveSettings } = useSettings();
 
@@ -112,12 +131,11 @@ function App() {
     sendChatMessage,
     navigateToCitation,
   } = useChat({
-    setViewMode,
-    setSelectedId,
+    selectVideo,
+    selectNote,
     seekTo,
     collectionId: activeCollectionId,
     notes,
-    setSelectedNote,
   });
 
   const {
@@ -130,10 +148,9 @@ function App() {
   } = useSearch({
     videos,
     notes,
-    setViewMode,
-    setSelectedId,
+    selectVideo,
+    selectNote,
     seekTo,
-    setSelectedNote,
   });
 
   const {
@@ -182,8 +199,7 @@ function App() {
       customPrompt,
       onSuccess: (data) => {
         setShowGenerateModal(false);
-        setViewMode("notes");
-        setSelectedNote({
+        selectNote({
           filename: data.filename,
           content: data.content,
           type: data.type,
@@ -221,6 +237,23 @@ function App() {
     });
   };
 
+  // Focus mode collapses both side panels so the content column stands alone,
+  // and restores them on the way out.
+  const toggleFocusMode = () => {
+    setFocusMode((prev) => {
+      const next = !prev;
+      setSidebarVisible(!next);
+      setShowChatPanel(!next);
+      return next;
+    });
+  };
+
+  // Below this, the content column stops being usable next to an open chat.
+  const MAIN_MIN_WIDTH = 460;
+  const snapChat =
+    showChatPanel &&
+    viewportWidth - (sidebarVisible ? sidebarWidth : 0) - chatWidth < MAIN_MIN_WIDTH;
+
   const handleSaveSettings = async () => {
     const ok = await saveSettings();
     if (ok) setShowSettings(false);
@@ -237,19 +270,17 @@ function App() {
         search={search}
         setSearch={setSearch}
         selectedId={selectedId}
-        setSelectedId={setSelectedId}
+        onSelectVideo={selectVideo}
         sidebarVisible={sidebarVisible}
         setSidebarVisible={setSidebarVisible}
         viewMode={viewMode}
-        setViewMode={setViewMode}
         showChatPanel={showChatPanel}
         setShowChatPanel={setShowChatPanel}
         handleUpload={handleUpload}
         deleteVideo={deleteVideo}
-        moveVideo={moveVideo}
+        reorderVideo={reorderVideo}
         saveRename={saveRename}
         openFolder={openFolder}
-        fetchNotes={fetchNotes}
         setShowGenerateModal={setShowGenerateModal}
         setShowExportModal={setShowExportModal}
         setShowSearch={setShowSearch}
@@ -258,24 +289,25 @@ function App() {
         collections={collections}
         activeCollectionId={activeCollectionId}
         onSwitchCollection={setActiveCollection}
+        onCreateCollection={createCollection}
         previewMode={previewMode}
         notes={notes}
         selectedNote={selectedNote}
-        setSelectedNote={setSelectedNote}
+        onSelectNote={selectNote}
+        onRenameNote={handleRenameNote}
+        onDeleteNote={deleteNote}
       />
       {sidebarVisible && <ResizeHandle onMouseDown={onSidebarMouseDown} active={sidebarResizing} />}
 
-      <div className="main-content">
+      <div className={`main-content ${snapChat ? "snapped-out" : ""}`}>
         {viewMode === "videos" ? (
-          <AnimatePresence mode="wait">
+          <>
             {selectedVideo ? (
               <VideoView
                 selectedVideo={selectedVideo}
                 videoRef={videoRef}
                 sidebarVisible={sidebarVisible}
                 setSidebarVisible={setSidebarVisible}
-                transcriptExpanded={transcriptExpanded}
-                setTranscriptExpanded={setTranscriptExpanded}
                 showLocalSearch={showLocalSearch}
                 setShowLocalSearch={setShowLocalSearch}
                 localSearchQuery={localSearchQuery}
@@ -283,6 +315,10 @@ function App() {
                 seekTo={seekTo}
                 syncTranscriptToVideo={syncTranscriptToVideo}
                 onExportTxt={downloadTxtLabel}
+                showChatPanel={showChatPanel}
+                setShowChatPanel={setShowChatPanel}
+                focusMode={focusMode}
+                onToggleFocus={toggleFocusMode}
                 notes={notes}
                 generating={generating}
                 onGenerateSummary={handleGenerateSummary}
@@ -296,29 +332,29 @@ function App() {
                 setSidebarVisible={setSidebarVisible}
               />
             )}
-          </AnimatePresence>
+          </>
         ) : (
           <NotesView
-            notes={notes}
             selectedNote={selectedNote}
-            setSelectedNote={setSelectedNote}
-            notesSidebarVisible={notesSidebarVisible}
-            setNotesSidebarVisible={setNotesSidebarVisible}
+            videos={videos}
+            onSelectVideo={selectVideo}
+            onClearNote={() => setSelectedNote(null)}
             sidebarVisible={sidebarVisible}
             setSidebarVisible={setSidebarVisible}
-            onRenameNote={handleRenameNote}
-            onDeleteNote={deleteNote}
             onDownloadNote={downloadNote}
-            previewMode={previewMode}
           />
         )}
       </div>
 
-      {showChatPanel && <ResizeHandle onMouseDown={onChatMouseDown} direction={-1} active={chatResizing} />}
+      {showChatPanel && !snapChat && (
+        <ResizeHandle onMouseDown={onChatMouseDown} direction={-1} active={chatResizing} />
+      )}
       <ChatPanel
-        width={showChatPanel ? chatWidth : 0}
+        width={snapChat ? "auto" : showChatPanel ? chatWidth : 0}
+        snapped={snapChat}
         isResizing={chatResizing}
         showChatPanel={showChatPanel}
+        setShowChatPanel={setShowChatPanel}
         chatMessages={chatMessages}
         chatInput={chatInput}
         setChatInput={setChatInput}

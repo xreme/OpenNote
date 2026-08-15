@@ -131,6 +131,20 @@ const getVideoStatus = (collectionId) => {
   return col ? { videos: col.videos, order: col.order } : { videos: {}, order: [] };
 };
 
+// getVideoStatus hands back a fresh object, so callers cannot persist a new
+// order by assigning to it — they have to go through here.
+const setVideoOrder = (collectionId, order) => {
+  const col = collections[collectionId];
+  if (!col) return false;
+  // Keep only ids this collection actually holds, then append anything the
+  // client did not mention so a stale payload can never drop a video.
+  const known = order.filter((id) => col.videos[id]);
+  const missing = Object.keys(col.videos).filter((id) => !known.includes(id));
+  col.order = [...known, ...missing];
+  saveCollection(collectionId);
+  return true;
+};
+
 const findVideoById = (videoId) => {
   for (const [collectionId, col] of Object.entries(collections)) {
     if (col.videos[videoId]) return { video: col.videos[videoId], collectionId };
@@ -192,6 +206,7 @@ module.exports = {
   deleteCollection,
   renameCollection,
   getVideoStatus,
+  setVideoOrder,
   findVideoById,
   getAllVideosAcrossCollections,
   addVideoToCollection,

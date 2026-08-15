@@ -1,5 +1,5 @@
 import React from "react";
-import { Upload, PanelLeftOpen } from "lucide-react";
+import { Clapperboard, PanelLeftOpen } from "lucide-react";
 
 export default function EmptyVideoState({ sidebarVisible, setSidebarVisible }) {
   return (
@@ -8,23 +8,19 @@ export default function EmptyVideoState({ sidebarVisible, setSidebarVisible }) {
         {!sidebarVisible && (
           <button
             onClick={() => setSidebarVisible(true)}
-            className="icon-btn-toggle"
-            title="Show Sidebar"
+            className="header-icon-btn"
+            title="Show sidebar"
           >
-            <PanelLeftOpen size={20} />
+            <PanelLeftOpen size={16} />
           </button>
         )}
       </div>
       <div className="empty-icon-box">
-        <Upload size={32} />
+        <Clapperboard size={28} />
       </div>
-      <h2 style={{ fontSize: "24px", marginBottom: "8px" }}>
-        Select a video to view
+      <h2 style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-soft)", margin: 0 }}>
+        Select a video to get started
       </h2>
-      <p style={{ color: "var(--text-dim)", maxWidth: "300px" }}>
-        Upload one or multiple videos from the sidebar to start the
-        transcription process.
-      </p>
     </div>
   );
 }

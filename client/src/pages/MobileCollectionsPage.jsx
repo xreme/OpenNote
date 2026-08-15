@@ -118,7 +118,7 @@ function DetailView({ item, collectionId, onBack, onRefresh, previewMode }) {
       display: 'flex', flexDirection: 'column',
       height: '100dvh',
       background: 'var(--bg-color)', color: 'var(--text-main)',
-      fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+      fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
       overflow: 'hidden',
     }}>
       <header style={{
@@ -491,7 +491,7 @@ export default function MobileCollectionsPage({ initialTab = 'Library' }) {
       display: 'flex', flexDirection: 'column',
       height: '100dvh',
       background: 'var(--bg-color)', color: 'var(--text-main)',
-      fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+      fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
       overflow: 'hidden',
     }}>
 

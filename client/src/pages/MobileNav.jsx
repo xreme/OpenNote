@@ -29,7 +29,7 @@ export default function MobileNav({ activeTab, onTabChange }) {
               background: 'none', border: 'none',
               borderBottom: isActive ? '2px solid var(--primary)' : '2px solid transparent',
               marginBottom: '-2px',
-              fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+              fontFamily: "'Hanken Grotesk', system-ui, -apple-system, sans-serif",
               letterSpacing: '0.03em',
               cursor: 'pointer',
             }}
